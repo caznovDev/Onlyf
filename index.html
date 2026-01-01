@@ -1,0 +1,84 @@
+
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProVideo - Professional Video Platform</title>
+    
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="ProVideo - Professional Video Platform">
+    <meta name="description" content="High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.">
+    <meta name="theme-color" content="#0F172A">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://provideo.com/">
+    <meta property="og:title" content="ProVideo - Professional Video Platform">
+    <meta property="og:description" content="High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.">
+    <meta property="og:image" content="https://provideo.com/og-image.jpg">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://provideo.com/">
+    <meta property="twitter:title" content="ProVideo - Professional Video Platform">
+    <meta property="twitter:description" content="High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.">
+    <meta property="twitter:image" content="https://provideo.com/og-image.jpg">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#E11D48',
+                        background: '#0F172A',
+                        surface: '#1E293B',
+                        'surface-hover': '#334155'
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #F1F5F9;
+            scrollbar-width: thin;
+            scrollbar-color: #334155 #0F172A;
+        }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0F172A; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
+    "next": "https://esm.sh/next@^16.1.1"
+  }
+}
+</script>
+</head>
+<body class="bg-background text-slate-100 min-h-screen antialiased">
+    <div id="root"></div>
+</body>
+</html>

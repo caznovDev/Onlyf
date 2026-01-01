@@ -1,11 +1,21 @@
-<div align="center">
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+# ProVideo Platform - Professional Video Hub
 
-  <h1>Built with AI Studio</h2>
+A high-performance, SEO-first video content platform designed for professional creators and cinematic delivery.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Key Features
+- **SEO-First Routing**: Uses immutable slugs for all entities (Videos, Models, Tags) to ensure permanent indexable URLs.
+- **Instant Edge Search**: Dynamic search dropdown with results for models and videos, optimized for low-latency retrieval.
+- **Hover Previews**: 500ms delayed video hover previews for an interactive catalog experience without visual noise.
+- **Pagination Strategy**: Standardized pagination on all views to improve crawlability and Core Web Vitals (LCP/CLS).
+- **Edge Deployment**: Designed to run on Cloudflare Pages with edge-caching for API responses.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Technical Stack
+- **React 19 & TypeScript**: Latest frontend patterns for stability and speed.
+- **Tailwind CSS**: Custom dark-theme design system (Slate & Crimson).
+- **Lucide Icons**: Consistent, lightweight iconography.
+- **Edge Architecture**: Ready for Cloudflare D1/KV integration.
 
-</div>
+## Compliance
+- **Age Restricted**: Built-in visual warnings and 18+ branding for adult content delivery compliance.
+- **SEO Strategy**: Includes JSON-LD schema (conceptual) and OpenGraph metadata for enhanced social visibility.
