@@ -3,19 +3,41 @@
 
 A high-performance, SEO-first video content platform designed for professional creators and cinematic delivery.
 
+## 🚀 Step-by-Step Deployment
+
+### 1. Database Setup
+Ensure you have the Wrangler CLI installed (`npm install -g wrangler`).
+```bash
+# Create the D1 database
+npx wrangler d1 create provideo_db
+
+# Initialize the schema
+npx wrangler d1 execute provideo_db --file=./schema.sql
+```
+
+### 2. Configure Environment
+Update `wrangler.toml` with the `database_id` provided by the command above.
+
+### 3. Deploy API (Workers)
+The API logic is located in `worker-api.ts`.
+```bash
+npx wrangler deploy worker-api.ts --name provideo-api
+```
+
+### 4. Deploy Frontend (Pages)
+1. Push your code to a GitHub repository.
+2. In the Cloudflare Dashboard, go to **Pages** > **Connect to Git**.
+3. Select this repo. 
+4. **Build Command**: Leave empty (for pure ESM).
+5. **Output Directory**: `/` (root).
+6. Add a `_redirects` file to the root for SPA support: `/* /index.html 200`.
+
 ## Key Features
-- **SEO-First Routing**: Uses immutable slugs for all entities (Videos, Models, Tags) to ensure permanent indexable URLs.
-- **Instant Edge Search**: Dynamic search dropdown with results for models and videos, optimized for low-latency retrieval.
-- **Hover Previews**: 500ms delayed video hover previews for an interactive catalog experience without visual noise.
-- **Pagination Strategy**: Standardized pagination on all views to improve crawlability and Core Web Vitals (LCP/CLS).
-- **Edge Deployment**: Designed to run on Cloudflare Pages with edge-caching for API responses.
+- **SEO-First Routing**: Immutable slugs for Videos, Models, and Tags.
+- **Instant Edge Search**: Low-latency retrieval via Cloudflare Workers.
+- **Hover Previews**: 500ms delayed interaction.
+- **D1 Integration**: Serverless SQL storage for content and views.
 
 ## Technical Stack
-- **React 19 & TypeScript**: Latest frontend patterns for stability and speed.
-- **Tailwind CSS**: Custom dark-theme design system (Slate & Crimson).
-- **Lucide Icons**: Consistent, lightweight iconography.
-- **Edge Architecture**: Ready for Cloudflare D1/KV integration.
-
-## Compliance
-- **Age Restricted**: Built-in visual warnings and 18+ branding for adult content delivery compliance.
-- **SEO Strategy**: Includes JSON-LD schema (conceptual) and OpenGraph metadata for enhanced social visibility.
+- **Frontend**: React 19, Tailwind CSS, Lucide Icons.
+- **Backend**: Cloudflare Workers, D1 SQL Database, KV Caching.
