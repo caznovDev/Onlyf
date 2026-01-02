@@ -1,0 +1,47 @@
+-- ProVideo Platform Database Schema
+
+CREATE TABLE models (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  bio TEXT,
+  thumbnail TEXT,
+  videos_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE videos (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT,
+  type TEXT CHECK( type IN ('onlyfans', 'normal') ) NOT NULL,
+  model_id TEXT,
+  duration INTEGER,
+  views INTEGER DEFAULT 0,
+  thumbnail TEXT,
+  hover_preview_url TEXT,
+  is_published INTEGER DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (model_id) REFERENCES models (id)
+);
+
+CREATE TABLE tags (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  description TEXT
+);
+
+CREATE TABLE video_tags (
+  video_id TEXT,
+  tag_id TEXT,
+  PRIMARY KEY (video_id, tag_id),
+  FOREIGN KEY (video_id) REFERENCES videos (id),
+  FOREIGN KEY (tag_id) REFERENCES tags (id)
+);
+
+-- Optimized indexes for SEO and lookups
+CREATE INDEX idx_videos_slug ON videos(slug);
+CREATE INDEX idx_models_slug ON models(slug);
+CREATE INDEX idx_tags_slug ON tags(slug);
+CREATE INDEX idx_videos_published ON videos(is_published);

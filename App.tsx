@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { HashRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { Play, Search, Menu, User, TrendingUp, Tags as TagIcon, Shield, Mail, X, ChevronRight, Users, ArrowRight, ChevronLeft, Loader2 } from 'lucide-react';
-import { MOCK_VIDEOS, MOCK_MODELS, MOCK_TAGS, SITE_NAME } from './constants';
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Play, Search, User, TrendingUp, Users, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { MOCK_VIDEOS, MOCK_MODELS, SITE_NAME } from './constants';
 import VideoCard from './components/VideoCard';
 import Breadcrumbs from './components/Breadcrumbs';
-import { Video, Model } from './types';
+import { Video } from './types';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -92,9 +91,10 @@ const HomePage = () => {
           const data = await res.json();
           setVideos(data.videos);
           setTotalPages(data.pagination.totalPages);
+        } else {
+           setVideos(MOCK_VIDEOS.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE));
         }
       } catch (e) {
-        // Fallback to mocks if API fails
         setVideos(MOCK_VIDEOS.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE));
       } finally {
         setLoading(false);
@@ -223,6 +223,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearching(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults({videos: [], models: []});
       return;
@@ -258,27 +268,55 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Search className="absolute left-4 top-2.5 text-slate-500" size={18} />
             {isSearching && searchQuery.length >= 2 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-surface border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-[60]">
+                {searchResults.models.length > 0 && (
+                  <div className="p-2 bg-slate-800/50 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4">Creators</div>
+                )}
                 {searchResults.models.map(m => (
                   <div key={m.slug} onClick={() => {navigate(`/models/${m.slug}`); setIsSearching(false);}} className="p-3 hover:bg-white/5 cursor-pointer flex items-center gap-3">
-                    <img src={m.thumbnail} className="w-8 h-8 rounded-full" /> <span>{m.name}</span>
+                    <img src={m.thumbnail} className="w-8 h-8 rounded-full object-cover" /> <span className="text-sm">{m.name}</span>
                   </div>
                 ))}
+                {searchResults.videos.length > 0 && (
+                  <div className="p-2 bg-slate-800/50 text-[10px] font-bold text-slate-500 uppercase tracking-widest px-4 border-t border-slate-700">Videos</div>
+                )}
                 {searchResults.videos.map(v => (
-                  <div key={v.slug} onClick={() => {navigate(`/video/${v.slug}`); setIsSearching(false);}} className="p-3 hover:bg-white/5 cursor-pointer border-t border-slate-800/50">
-                    {v.title}
+                  <div key={v.slug} onClick={() => {navigate(`/video/${v.slug}`); setIsSearching(false);}} className="p-3 hover:bg-white/5 cursor-pointer flex items-center gap-3">
+                    <img src={v.thumbnail} className="w-12 h-8 rounded object-cover" />
+                    <span className="text-sm line-clamp-1">{v.title}</span>
                   </div>
                 ))}
+                {searchResults.videos.length === 0 && searchResults.models.length === 0 && (
+                  <div className="p-6 text-center text-slate-500 text-sm">No results found for "{searchQuery}"</div>
+                )}
               </div>
             )}
           </div>
-          <button className="hidden sm:flex items-center gap-2 bg-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
-            <User size={16} /> SIGN IN
-          </button>
+          <div className="hidden sm:flex items-center gap-4">
+            <button onClick={() => navigate('/models')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">Creators</button>
+            <button className="flex items-center gap-2 bg-primary px-5 py-2 rounded-full text-sm font-bold shadow-lg shadow-primary/20 hover:scale-105 transition-transform">
+              <User size={16} /> SIGN IN
+            </button>
+          </div>
         </div>
       </header>
       <main className="flex-1 container mx-auto px-4 py-8">{children}</main>
-      <footer className="bg-surface border-t border-slate-800 mt-20 py-12 text-center text-xs text-slate-600">
-        © 2024 {SITE_NAME} Platform. 18+ Mandatory verification for all content.
+      <footer className="bg-surface border-t border-slate-800 mt-20 py-12 text-center">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col items-center gap-4 mb-8">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-slate-700 rounded flex items-center justify-center">
+                <Play size={14} fill="white" />
+              </div>
+              <span className="text-lg font-black tracking-tighter uppercase">{SITE_NAME}</span>
+            </div>
+            <p className="text-slate-500 text-sm max-w-md">The world's leading professional video platform. High-quality 4K cinematic content from the world's top creators.</p>
+          </div>
+          <div className="text-[10px] text-slate-600 space-y-2">
+            <p>© 2024 {SITE_NAME} Platform. All Rights Reserved.</p>
+            <p className="font-bold text-slate-500 uppercase tracking-widest">18+ | Mandatory age verification for all participants and viewers.</p>
+            <p className="max-w-2xl mx-auto">All individuals appearing in photos and videos on this site were at least 18 years of age at the time of photography or filming. Compliance with 18 U.S.C. § 2257 is strictly maintained.</p>
+          </div>
+        </div>
       </footer>
     </div>
   );
@@ -291,7 +329,6 @@ const App: React.FC = () => (
         <Route path="/" element={<HomePage />} />
         <Route path="/video/:slug" element={<VideoDetail />} />
         <Route path="/models" element={<ModelListingPage />} />
-        {/* Placeholder routes for simplicity */}
         <Route path="/models/:slug" element={<HomePage />} />
         <Route path="/tags/:slug" element={<HomePage />} />
       </Routes>
