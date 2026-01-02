@@ -4,5 +4,5 @@ compatibility_date = "2024-11-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "provideo_db"
-database_id = "placeholder-id-see-readme"
+database_name = "db"
+database_id = "8869a282-272b-4b91-abdd-d14de4a5e3e8"
