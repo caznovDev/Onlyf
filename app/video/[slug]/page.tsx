@@ -1,8 +1,9 @@
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { MOCK_VIDEOS } from '../../../constants';
-import { Eye, Clock, Calendar, User } from 'lucide-react';
+import { Eye, Clock, Calendar, User, Zap } from 'lucide-react';
 import Link from 'next/link';
+import VideoCard from '../../../components/VideoCard';
 
 export const runtime = 'edge';
 
@@ -11,11 +12,6 @@ type Props = {
 };
 
 async function getVideo(slug: string) {
-  // In production, you would fetch from your D1-backed API:
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/video/${slug}`);
-  // return res.json();
-  
-  // Fallback to mock data for demonstration/build stability
   return MOCK_VIDEOS.find(v => v.slug === slug) || MOCK_VIDEOS[0];
 }
 
@@ -40,6 +36,12 @@ export async function generateMetadata(
 export default async function VideoPage({ params }: Props) {
   const { slug } = await params;
   const video = await getVideo(slug);
+  
+  // Filter 4 random videos for recommendations
+  const recommendations = MOCK_VIDEOS
+    .filter(v => v.slug !== slug)
+    .sort(() => 0.5 - Math.random())
+    .slice(0, 4);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -58,7 +60,7 @@ export default async function VideoPage({ params }: Props) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+    <div className="max-w-6xl mx-auto space-y-12 animate-fade-in">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -121,6 +123,18 @@ export default async function VideoPage({ params }: Props) {
               Unlock Full Gallery
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Recommended Section */}
+      <div className="pt-12 border-t border-slate-800">
+        <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
+          <Zap size={24} className="text-rose-500" /> More Like This
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {recommendations.map(v => (
+            <VideoCard key={v.id} video={v} />
+          ))}
         </div>
       </div>
     </div>
