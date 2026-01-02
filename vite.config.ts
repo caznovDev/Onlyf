@@ -1,1 +1,0 @@
-// Legacy file - removed to favor Next.js build system
