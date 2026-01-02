@@ -1,43 +1,35 @@
 
 # ProVideo Platform - Professional Video Hub
 
-A high-performance, SEO-first video content platform designed for professional creators and cinematic delivery.
+A high-performance, SEO-first video platform leveraging Cloudflare Pages and Functions.
 
-## 🚀 Step-by-Step Deployment
+## 🚀 Cloudflare Deployment
 
 ### 1. Database Setup
-Ensure you have the Wrangler CLI installed (`npm install -g wrangler`).
+Create your D1 database and initialize it.
 ```bash
-# Create the D1 database
 npx wrangler d1 create provideo_db
-
-# Initialize the schema
 npx wrangler d1 execute provideo_db --file=./schema.sql
 ```
 
-### 2. Configure Environment
-Update `wrangler.toml` with the `database_id` provided by the command above.
+### 2. Bind the Database
+In your Cloudflare Pages project settings:
+1. Go to **Settings** > **Functions**.
+2. Add a **D1 database binding**.
+3. **Variable name**: `DB`
+4. **Database**: `provideo_db`
 
-### 3. Deploy API (Workers)
-The API logic is located in `worker-api.ts`.
-```bash
-npx wrangler deploy worker-api.ts --name provideo-api
+### 3. Folder Structure
+The API logic now lives in the `/functions` directory:
+- `/functions/api/v1/videos.ts` -> Listings
+- `/functions/api/v1/video/[slug].ts` -> Details
+- `/functions/api/v1/search.ts` -> Instant Search
+
+### 4. SPA Redirects
+Add a `_redirects` file to the root of your project:
+```text
+/*  /index.html  200
 ```
 
-### 4. Deploy Frontend (Pages)
-1. Push your code to a GitHub repository.
-2. In the Cloudflare Dashboard, go to **Pages** > **Connect to Git**.
-3. Select this repo. 
-4. **Build Command**: Leave empty (for pure ESM).
-5. **Output Directory**: `/` (root).
-6. Add a `_redirects` file to the root for SPA support: `/* /index.html 200`.
-
-## Key Features
-- **SEO-First Routing**: Immutable slugs for Videos, Models, and Tags.
-- **Instant Edge Search**: Low-latency retrieval via Cloudflare Workers.
-- **Hover Previews**: 500ms delayed interaction.
-- **D1 Integration**: Serverless SQL storage for content and views.
-
-## Technical Stack
-- **Frontend**: React 19, Tailwind CSS, Lucide Icons.
-- **Backend**: Cloudflare Workers, D1 SQL Database, KV Caching.
+## Compliance
+Strictly 18+. All content creators must be verified through the platform's compliance system.
