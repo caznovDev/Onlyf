@@ -4,11 +4,14 @@ import { MOCK_VIDEOS } from '../../../constants';
 import { Eye, Clock, Calendar, Zap } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
+import Breadcrumbs from '../../../components/Breadcrumbs';
+import Pagination from '../../../components/Pagination';
 
 export const runtime = 'edge';
 
 type Props = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ rec_page?: string }>;
 };
 
 async function getVideo(slug: string) {
@@ -33,21 +36,30 @@ export async function generateMetadata(
   };
 }
 
-export default async function VideoPage({ params }: Props) {
+export default async function VideoPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const sParams = await searchParams;
   const video = await getVideo(slug);
   
-  // Filter 8 random videos for recommendations
-  const recommendations = MOCK_VIDEOS
-    .filter(v => v.slug !== slug)
-    .sort(() => 0.5 - Math.random())
-    .slice(0, 8);
+  const recPage = parseInt(sParams.rec_page || '1');
+  const recLimit = 8;
+  
+  // Filter all other videos for recommendations
+  const allRecommendations = MOCK_VIDEOS.filter(v => v.slug !== slug);
+  const totalRecPages = Math.ceil(allRecommendations.length / recLimit);
+  const recommendations = allRecommendations.slice((recPage - 1) * recLimit, recPage * recLimit);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const breadcrumbs = [
+    { label: 'Videos', href: '/' },
+    { label: video.model.name, href: `/models/${video.model.slug}` },
+    { label: video.title, href: `/video/${video.slug}` },
+  ];
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -60,12 +72,14 @@ export default async function VideoPage({ params }: Props) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-fade-in pb-12">
+    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       
+      <Breadcrumbs items={breadcrumbs} />
+
       <div className="space-y-4">
         <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
           {video.title}
@@ -119,6 +133,14 @@ export default async function VideoPage({ params }: Props) {
           {recommendations.map(v => (
             <VideoCard key={v.id} video={v} />
           ))}
+        </div>
+        
+        <div className="mt-8">
+          <Pagination 
+            currentPage={recPage} 
+            totalPages={totalRecPages} 
+            baseUrl={`/video/${slug}`} 
+          />
         </div>
       </div>
     </div>
