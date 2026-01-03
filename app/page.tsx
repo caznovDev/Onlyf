@@ -1,6 +1,7 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
 import VideoCard from '../components/VideoCard';
+import Pagination from '../components/Pagination';
 import { MOCK_VIDEOS } from '../constants';
 
 export const runtime = 'edge';
@@ -12,10 +13,8 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const page = parseInt(params.page || '1');
-  const limit = 8;
+  const limit = 12; // Adjusted limit for better grid
   
-  // In production, fetch from D1 via your internal API or direct binding
-  // For now, we use the mock data with basic slicing for demonstration
   const videos = MOCK_VIDEOS.slice((page - 1) * limit, page * limit);
   const totalPages = Math.ceil(MOCK_VIDEOS.length / limit);
 
@@ -33,23 +32,11 @@ export default async function HomePage({
         ))}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-12">
-          {Array.from({ length: totalPages }).map((_, i) => (
-            <a
-              key={i}
-              href={`?page=${i + 1}`}
-              className={`px-4 py-2 rounded-lg font-bold border transition-all ${
-                page === i + 1
-                  ? 'bg-rose-500 border-rose-500 text-white'
-                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-600'
-              }`}
-            >
-              {i + 1}
-            </a>
-          ))}
-        </div>
-      )}
+      <Pagination 
+        currentPage={page} 
+        totalPages={totalPages} 
+        baseUrl="/" 
+      />
     </div>
   );
 }

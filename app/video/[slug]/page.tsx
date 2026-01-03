@@ -1,7 +1,7 @@
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
 import { MOCK_VIDEOS } from '../../../constants';
-import { Eye, Clock, Calendar, User, Zap } from 'lucide-react';
+import { Eye, Clock, Calendar, Zap } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 
@@ -37,11 +37,11 @@ export default async function VideoPage({ params }: Props) {
   const { slug } = await params;
   const video = await getVideo(slug);
   
-  // Filter 4 random videos for recommendations
+  // Filter 8 random videos for recommendations
   const recommendations = MOCK_VIDEOS
     .filter(v => v.slug !== slug)
     .sort(() => 0.5 - Math.random())
-    .slice(0, 4);
+    .slice(0, 8);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -60,7 +60,7 @@ export default async function VideoPage({ params }: Props) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-fade-in">
+    <div className="max-w-6xl mx-auto space-y-12 animate-fade-in pb-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -93,36 +93,20 @@ export default async function VideoPage({ params }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800">
-            <h2 className="text-xl font-bold mb-4">About this video</h2>
-            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-              {video.description}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {video.tags.map(tag => (
-              <span key={tag.id} className="bg-slate-800 hover:bg-slate-700 transition-colors px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer">
-                #{tag.name}
-              </span>
-            ))}
-          </div>
+      <div className="space-y-8">
+        <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800">
+          <h2 className="text-xl font-bold mb-4">About this video</h2>
+          <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
+            {video.description}
+          </p>
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-6">
-            <h3 className="text-rose-500 font-bold mb-2 flex items-center gap-2">
-              <User size={18} /> Support the Creator
-            </h3>
-            <p className="text-sm text-slate-300 mb-4">
-              Get access to exclusive content and full length videos from {video.model.name}.
-            </p>
-            <button className="w-full bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-rose-500/20">
-              Unlock Full Gallery
-            </button>
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {video.tags.map(tag => (
+            <span key={tag.id} className="bg-slate-800 hover:bg-slate-700 transition-colors px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer">
+              #{tag.name}
+            </span>
+          ))}
         </div>
       </div>
 
