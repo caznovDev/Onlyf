@@ -1,11 +1,43 @@
 import React from 'react';
 import { Users } from 'lucide-react';
-import { MOCK_MODELS } from '../../constants';
 import Link from 'next/link';
 import Pagination from '../../components/Pagination';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 export const runtime = 'edge';
+
+async function getModels(page: number, limit: number) {
+  const db = process.env.DB as any;
+  if (!db) return { models: [], totalPages: 0 };
+
+  const offset = (page - 1) * limit;
+
+  try {
+    const { results } = await db.prepare(`
+      SELECT * FROM models 
+      ORDER BY name ASC 
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all();
+
+    const countResult = await db.prepare("SELECT COUNT(*) as total FROM models").first();
+    const total = countResult?.total || 0;
+
+    const mappedModels = results.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      slug: m.slug,
+      thumbnail: m.thumbnail,
+      videosCount: m.videos_count
+    }));
+
+    return { 
+      models: mappedModels, 
+      totalPages: Math.ceil(total / limit) 
+    };
+  } catch (e) {
+    return { models: [], totalPages: 0 };
+  }
+}
 
 export default async function ModelListingPage({
   searchParams,
@@ -14,10 +46,9 @@ export default async function ModelListingPage({
 }) {
   const params = await searchParams;
   const page = parseInt(params.page || '1');
-  const limit = 12;
+  const limit = 18;
   
-  const models = MOCK_MODELS.slice((page - 1) * limit, page * limit);
-  const totalPages = Math.ceil(MOCK_MODELS.length / limit);
+  const { models, totalPages } = await getModels(page, limit);
 
   const breadcrumbs = [
     { label: 'Creators', href: '/models' }
@@ -32,25 +63,29 @@ export default async function ModelListingPage({
           <Users className="text-rose-500" /> Creators
         </h1>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
-          {models.map(model => (
-            <Link key={model.id} href={`/models/${model.slug}`} className="group space-y-3 block">
-              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-slate-800 shadow-lg">
-                <img 
-                  src={model.thumbnail} 
-                  className="w-full h-full object-cover transition-transform group-hover:scale-110" 
-                  alt={model.name}
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
-                <div className="absolute bottom-3 left-3 bg-rose-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                  {model.videosCount} Videos
+        {models.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
+            {models.map(model => (
+              <Link key={model.id} href={`/models/${model.slug}`} className="group space-y-3 block">
+                <div className="relative aspect-[3/4] rounded-2xl overflow-hidden border border-slate-800 shadow-lg">
+                  <img 
+                    src={model.thumbnail} 
+                    className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                    alt={model.name}
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-60" />
+                  <div className="absolute bottom-3 left-3 bg-rose-500 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
+                    {model.videosCount} Videos
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-sm font-bold group-hover:text-rose-500 transition-colors text-center line-clamp-1">{model.name}</h3>
-            </Link>
-          ))}
-        </div>
+                <h3 className="text-sm font-bold group-hover:text-rose-500 transition-colors text-center line-clamp-1">{model.name}</h3>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center py-20 text-slate-500">No creators found.</p>
+        )}
 
         <Pagination 
           currentPage={page} 

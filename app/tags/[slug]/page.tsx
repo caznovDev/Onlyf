@@ -1,10 +1,10 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { MOCK_TAGS, MOCK_VIDEOS } from '../../../constants';
 import VideoCard from '../../../components/VideoCard';
 import Pagination from '../../../components/Pagination';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import { Tag as TagIcon, LayoutGrid } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
 
@@ -14,18 +14,63 @@ type Props = {
 };
 
 async function getTagData(slug: string, page: number, limit: number) {
-  const tag = MOCK_TAGS.find(t => t.slug === slug) || MOCK_TAGS[0];
-  // Find videos that include this tag
-  const allVideos = MOCK_VIDEOS.filter(v => v.tags.some(t => t.slug === slug));
-  const videos = allVideos.slice((page - 1) * limit, page * limit);
-  const totalPages = Math.ceil(allVideos.length / limit);
-  
-  return { tag, videos, totalPages };
+  const db = process.env.DB as any;
+  if (!db) return null;
+
+  try {
+    const tag = await db.prepare("SELECT * FROM tags WHERE slug = ?").bind(slug).first();
+    if (!tag) return null;
+
+    const offset = (page - 1) * limit;
+    const { results: videoResults } = await db.prepare(`
+      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      FROM videos v
+      JOIN video_tags vt ON v.id = vt.video_id
+      JOIN models m ON v.model_id = m.id
+      WHERE vt.tag_id = ? AND v.is_published = 1
+      ORDER BY v.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(tag.id, limit, offset).all();
+
+    const countResult = await db.prepare(`
+      SELECT COUNT(*) as total FROM video_tags WHERE tag_id = ?
+    `).bind(tag.id).first();
+    
+    const mappedVideos = videoResults.map((v: any) => ({
+      id: v.id,
+      title: v.title,
+      slug: v.slug,
+      description: v.description,
+      type: v.type,
+      duration: v.duration,
+      views: v.views,
+      thumbnail: v.thumbnail,
+      hoverPreviewUrl: v.hover_preview_url,
+      createdAt: v.created_at,
+      model: {
+        id: v.model_id,
+        name: v.model_name,
+        slug: v.model_slug,
+        thumbnail: v.model_thumbnail
+      },
+      tags: []
+    }));
+
+    return { 
+      tag: { id: tag.id, name: tag.name, slug: tag.slug, description: tag.description }, 
+      videos: mappedVideos, 
+      totalPages: Math.ceil((countResult?.total || 0) / limit) 
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const tag = MOCK_TAGS.find(t => t.slug === slug) || MOCK_TAGS[0];
+  const db = process.env.DB as any;
+  const tag = await db?.prepare("SELECT name, description FROM tags WHERE slug = ?").bind(slug).first();
+  if (!tag) return { title: 'Tag Not Found' };
   return {
     title: `${tag.name} - Browse Videos`,
     description: tag.description,
@@ -38,7 +83,10 @@ export default async function TagVideosPage({ params, searchParams }: Props) {
   const page = parseInt(sParams.page || '1');
   const limit = 12;
 
-  const { tag, videos, totalPages } = await getTagData(slug, page, limit);
+  const data = await getTagData(slug, page, limit);
+  if (!data) notFound();
+
+  const { tag, videos, totalPages } = data;
 
   const breadcrumbs = [
     { label: 'Tags', href: '/tags' },

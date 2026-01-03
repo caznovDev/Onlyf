@@ -1,10 +1,10 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { MOCK_MODELS, MOCK_VIDEOS } from '../../../constants';
 import VideoCard from '../../../components/VideoCard';
 import Pagination from '../../../components/Pagination';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import { Users, Info } from 'lucide-react';
+import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
 
@@ -14,17 +14,67 @@ type Props = {
 };
 
 async function getModelData(slug: string, page: number, limit: number) {
-  const model = MOCK_MODELS.find(m => m.slug === slug) || MOCK_MODELS[0];
-  const allVideos = MOCK_VIDEOS.filter(v => v.model.slug === slug);
-  const videos = allVideos.slice((page - 1) * limit, page * limit);
-  const totalPages = Math.ceil(allVideos.length / limit);
-  
-  return { model, videos, totalPages };
+  const db = process.env.DB as any;
+  if (!db) return null;
+
+  try {
+    const model = await db.prepare("SELECT * FROM models WHERE slug = ?").bind(slug).first();
+    if (!model) return null;
+
+    const offset = (page - 1) * limit;
+    const { results: videoResults } = await db.prepare(`
+      SELECT v.* FROM videos v 
+      WHERE v.model_id = ? AND v.is_published = 1
+      ORDER BY v.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(model.id, limit, offset).all();
+
+    const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE model_id = ? AND is_published = 1").bind(model.id).first();
+    
+    const mappedVideos = videoResults.map((v: any) => ({
+      id: v.id,
+      title: v.title,
+      slug: v.slug,
+      description: v.description,
+      type: v.type,
+      duration: v.duration,
+      views: v.views,
+      thumbnail: v.thumbnail,
+      hoverPreviewUrl: v.hover_preview_url,
+      createdAt: v.created_at,
+      model: {
+        id: model.id,
+        name: model.name,
+        slug: model.slug,
+        thumbnail: model.thumbnail
+      },
+      tags: []
+    }));
+
+    return { 
+      model: {
+        id: model.id,
+        name: model.name,
+        slug: model.slug,
+        bio: model.bio,
+        thumbnail: model.thumbnail,
+        videosCount: model.videos_count
+      }, 
+      videos: mappedVideos, 
+      totalPages: Math.ceil((countResult?.total || 0) / limit) 
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const model = MOCK_MODELS.find(m => m.slug === slug) || MOCK_MODELS[0];
+  const db = process.env.DB as any;
+  const model = await db?.prepare("SELECT name, bio FROM models WHERE slug = ?").bind(slug).first();
+  
+  if (!model) return { title: 'Creator Not Found' };
+  
   return {
     title: `${model.name} - Creator Profile`,
     description: model.bio,
@@ -37,7 +87,10 @@ export default async function ModelProfilePage({ params, searchParams }: Props) 
   const page = parseInt(sParams.page || '1');
   const limit = 12;
 
-  const { model, videos, totalPages } = await getModelData(slug, page, limit);
+  const data = await getModelData(slug, page, limit);
+  if (!data) notFound();
+
+  const { model, videos, totalPages } = data;
 
   const breadcrumbs = [
     { label: 'Creators', href: '/models' },
@@ -72,13 +125,13 @@ export default async function ModelProfilePage({ params, searchParams }: Props) 
 
         <div className="space-y-6">
           <h2 className="text-2xl font-bold border-l-4 border-rose-500 pl-4">Creator Videos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {videos.length > 0 ? (
-              videos.map(video => <VideoCard key={video.id} video={video} />)
-            ) : (
-              <p className="text-slate-500 col-span-full py-12 text-center">No videos found for this creator.</p>
-            )}
-          </div>
+          {videos.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {videos.map(video => <VideoCard key={video.id} video={video} />)}
+            </div>
+          ) : (
+            <p className="text-slate-500 py-12 text-center">No videos found for this creator.</p>
+          )}
           
           <Pagination 
             currentPage={page} 

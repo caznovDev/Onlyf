@@ -1,11 +1,11 @@
 import React from 'react';
 import { Metadata, ResolvingMetadata } from 'next';
-import { MOCK_VIDEOS } from '../../../constants';
 import { Eye, Clock, Calendar, Zap } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import Pagination from '../../../components/Pagination';
+import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
 
@@ -14,40 +14,96 @@ type Props = {
   searchParams: Promise<{ rec_page?: string }>;
 };
 
-async function getVideo(slug: string) {
-  return MOCK_VIDEOS.find(v => v.slug === slug) || MOCK_VIDEOS[0];
+async function getVideoData(slug: string, recPage: number, recLimit: number) {
+  const db = process.env.DB as any;
+  if (!db) return null;
+
+  try {
+    const video = await db.prepare(`
+      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      FROM videos v 
+      JOIN models m ON v.model_id = m.id 
+      WHERE v.slug = ? AND v.is_published = 1
+    `).bind(slug).first();
+
+    if (!video) return null;
+
+    // Fetch tags for this video
+    const { results: tags } = await db.prepare(`
+      SELECT t.* FROM tags t
+      JOIN video_tags vt ON t.id = vt.tag_id
+      WHERE vt.video_id = ?
+    `).bind(video.id).all();
+
+    // Fetch recommended videos (similar model or random)
+    const recOffset = (recPage - 1) * recLimit;
+    const { results: recVideos } = await db.prepare(`
+      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      FROM videos v
+      JOIN models m ON v.model_id = m.id
+      WHERE v.id != ? AND v.is_published = 1
+      ORDER BY RANDOM()
+      LIMIT ? OFFSET ?
+    `).bind(video.id, recLimit, recOffset).all();
+
+    const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE id != ? AND is_published = 1").bind(video.id).first();
+
+    const mapVideo = (v: any) => ({
+      id: v.id,
+      title: v.title,
+      slug: v.slug,
+      description: v.description,
+      type: v.type,
+      duration: v.duration,
+      views: v.views,
+      thumbnail: v.thumbnail,
+      hoverPreviewUrl: v.hover_preview_url,
+      createdAt: v.created_at,
+      model: {
+        id: v.model_id,
+        name: v.model_name,
+        slug: v.model_slug,
+        thumbnail: v.model_thumbnail
+      },
+      tags: []
+    });
+
+    return {
+      video: {
+        ...mapVideo(video),
+        tags: tags.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug }))
+      },
+      recommendations: recVideos.map(mapVideo),
+      totalRecPages: Math.ceil((countResult?.total || 0) / recLimit)
+    };
+  } catch (e) {
+    return null;
+  }
 }
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const video = await getVideo(slug);
+  const db = process.env.DB as any;
+  const video = await db?.prepare("SELECT title, description FROM videos WHERE slug = ?").bind(slug).first();
+  
+  if (!video) return { title: 'Video Not Found' };
 
   return {
     title: video.title,
     description: video.description.slice(0, 160),
-    openGraph: {
-      title: video.title,
-      description: video.description.slice(0, 160),
-      images: [video.thumbnail],
-    },
   };
 }
 
 export default async function VideoPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const sParams = await searchParams;
-  const video = await getVideo(slug);
-  
   const recPage = parseInt(sParams.rec_page || '1');
   const recLimit = 8;
-  
-  // Filter all other videos for recommendations
-  const allRecommendations = MOCK_VIDEOS.filter(v => v.slug !== slug);
-  const totalRecPages = Math.ceil(allRecommendations.length / recLimit);
-  const recommendations = allRecommendations.slice((recPage - 1) * recLimit, recPage * recLimit);
+
+  const data = await getVideoData(slug, recPage, recLimit);
+  if (!data) notFound();
+
+  const { video, recommendations, totalRecPages } = data;
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -61,23 +117,8 @@ export default async function VideoPage({ params, searchParams }: Props) {
     { label: video.title, href: `/video/${video.slug}` },
   ];
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'VideoObject',
-    'name': video.title,
-    'description': video.description,
-    'thumbnailUrl': video.thumbnail,
-    'uploadDate': video.createdAt,
-    'duration': `PT${Math.floor(video.duration / 60)}M${video.duration % 60}S`,
-  };
-
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      
       <Breadcrumbs items={breadcrumbs} />
 
       <div className="space-y-4">
@@ -117,31 +158,36 @@ export default async function VideoPage({ params, searchParams }: Props) {
 
         <div className="flex flex-wrap gap-2">
           {video.tags.map(tag => (
-            <span key={tag.id} className="bg-slate-800 hover:bg-slate-700 transition-colors px-4 py-1.5 rounded-full text-xs font-medium cursor-pointer">
+            <Link key={tag.id} href={`/tags/${tag.slug}`} className="bg-slate-800 hover:bg-slate-700 transition-colors px-4 py-1.5 rounded-full text-xs font-medium">
               #{tag.name}
-            </span>
+            </Link>
           ))}
         </div>
       </div>
 
-      {/* Recommended Section */}
       <div className="pt-12 border-t border-slate-800">
         <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
           <Zap size={24} className="text-rose-500" /> More Like This
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {recommendations.map(v => (
-            <VideoCard key={v.id} video={v} />
-          ))}
-        </div>
         
-        <div className="mt-8">
-          <Pagination 
-            currentPage={recPage} 
-            totalPages={totalRecPages} 
-            baseUrl={`/video/${slug}`} 
-          />
-        </div>
+        {recommendations.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recommendations.map(v => (
+                <VideoCard key={v.id} video={v} />
+              ))}
+            </div>
+            <div className="mt-8">
+              <Pagination 
+                currentPage={recPage} 
+                totalPages={totalRecPages} 
+                baseUrl={`/video/${slug}`} 
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-slate-500">No other videos to recommend.</p>
+        )}
       </div>
     </div>
   );
