@@ -46,10 +46,7 @@ export async function POST(request: NextRequest) {
     const baseSlug = slugify(title);
     const finalSlug = `${baseSlug}-${videoId.slice(0, 8)}`;
 
-    // 2. Insert into D1 using direct links
-    // Note: We use preview_url for hover_preview_url and thumbnail_url for thumbnail.
-    // If you have a separate video_url column, ensure your schema supports it.
-    // Here we use hover_preview_url for the player as established in the current UI.
+    // 2. Insert into D1
     await db.prepare(`
       INSERT INTO videos (id, title, slug, description, type, model_id, duration, thumbnail, hover_preview_url, is_published)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -60,27 +57,36 @@ export async function POST(request: NextRequest) {
       description || '',
       type,
       model.id,
-      0, // Placeholder for duration
+      0,
       thumbnail_url || 'https://picsum.photos/1280/720',
-      video_url, // Using main video URL for the content
+      video_url, 
       1
     ).run();
 
     // 3. Update Model Video Count
-    await db.prepare("UPDATE models SET videos_count = videos_count + 1 WHERE id = ?").bind(model.id).run();
+    await db.prepare("UPDATE models SET videos_count = (SELECT COUNT(*) FROM videos WHERE model_id = ?) WHERE id = ?")
+      .bind(model.id, model.id).run();
 
-    // 4. Handle Tags
+    // 4. Handle Tags with Auto-Creation
     if (Array.isArray(tags) && tags.length > 0) {
-      for (const tagId of tags) {
-        try {
-          // Resolve tag by slug if ID isn't a UUID
-          const tag = await db.prepare("SELECT id FROM tags WHERE slug = ? OR id = ?").bind(tagId, tagId).first();
-          if (tag) {
-            await db.prepare("INSERT INTO video_tags (video_id, tag_id) VALUES (?, ?)").bind(videoId, tag.id).run();
-          }
-        } catch (tagErr) {
-          console.warn(`Could not link tag ${tagId}`);
+      for (const tagName of tags) {
+        const tagSlug = slugify(tagName);
+        
+        // Find or Create Tag
+        let tag = await db.prepare("SELECT id FROM tags WHERE slug = ?").bind(tagSlug).first();
+        
+        if (!tag) {
+          const newTagId = crypto.randomUUID();
+          await db.prepare("INSERT INTO tags (id, name, slug, description) VALUES (?, ?, ?, ?)")
+            .bind(newTagId, tagName, tagSlug, `Videos related to ${tagName}`)
+            .run();
+          tag = { id: newTagId };
         }
+
+        // Link Tag to Video
+        await db.prepare("INSERT OR IGNORE INTO video_tags (video_id, tag_id) VALUES (?, ?)")
+          .bind(videoId, tag.id)
+          .run();
       }
     }
 
@@ -88,7 +94,7 @@ export async function POST(request: NextRequest) {
       success: true, 
       slug: finalSlug,
       videoId,
-      message: "Video registered with direct links."
+      message: "Video registered and tags synchronized."
     }, { status: 201 });
 
   } catch (e: any) {

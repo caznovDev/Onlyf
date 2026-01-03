@@ -1,5 +1,6 @@
 import React from 'react';
-import { Play } from 'lucide-react';
+import { Play, Settings } from 'lucide-react';
+import Link from 'next/link';
 import { SITE_NAME } from '../constants';
 
 const Footer = () => {
@@ -14,6 +15,15 @@ const Footer = () => {
             <span className="text-lg font-black tracking-tighter uppercase">{SITE_NAME}</span>
           </div>
           <p className="text-slate-500 text-sm max-w-md">The world's leading professional video platform. High-quality 4K cinematic content from the world's top creators.</p>
+          
+          <div className="flex items-center gap-4 mt-2">
+            <Link href="/models/manage" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
+              <Settings size={10} /> Model Registry
+            </Link>
+            <Link href="/upload" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
+              <Settings size={10} /> Video Studio
+            </Link>
+          </div>
         </div>
         <div className="text-[10px] text-slate-600 space-y-2">
           <p>© 2024 {SITE_NAME} Platform. All Rights Reserved.</p>
