@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Settings } from 'lucide-react';
+import { Play, Settings, Book } from 'lucide-react';
 import Link from 'next/link';
 import { SITE_NAME } from '../constants';
 
@@ -22,6 +22,9 @@ const Footer = () => {
             </Link>
             <Link href="/upload" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
               <Settings size={10} /> Video Studio
+            </Link>
+            <Link href="/docs/api" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
+              <Book size={10} /> API Docs
             </Link>
           </div>
         </div>
