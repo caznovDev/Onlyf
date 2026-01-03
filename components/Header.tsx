@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Play, Search, Users, Menu, X, Tag } from 'lucide-react';
+import { Play, Search, Users, Menu, X, Tag, Upload } from 'lucide-react';
 import { SITE_NAME } from '../constants';
 
 const Header = () => {
@@ -48,13 +48,13 @@ const Header = () => {
           <span className="text-xl font-black tracking-tighter uppercase hidden xs:inline">{SITE_NAME}</span>
         </Link>
         
-        <div className="flex-1 max-w-xl relative" ref={searchRef}>
+        <div className="flex-1 max-w-md relative" ref={searchRef}>
           <input 
             type="text" 
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setIsSearching(true); }}
             onFocus={() => setIsSearching(true)}
-            placeholder="Search..." 
+            placeholder="Search videos..." 
             className="w-full bg-slate-900 border border-slate-700 rounded-full py-2 px-5 pl-10 text-sm focus:border-rose-500 transition-all outline-none"
           />
           <Search className="absolute left-3.5 top-2.5 text-slate-500" size={16} />
@@ -85,12 +85,15 @@ const Header = () => {
           )}
         </div>
 
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="/models" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-2">
-            <Users size={18} /> Creators
+        <nav className="hidden md:flex items-center gap-4">
+          <Link href="/models" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 px-2 py-1">
+            <Users size={16} /> Creators
           </Link>
-          <Link href="/tags" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-2">
-            <Tag size={18} /> Tags
+          <Link href="/tags" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 px-2 py-1">
+            <Tag size={16} /> Tags
+          </Link>
+          <Link href="/upload" className="bg-rose-500 hover:bg-rose-600 text-white text-sm font-bold px-4 py-2 rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-rose-500/20 active:scale-95">
+            <Upload size={16} /> Upload
           </Link>
         </nav>
 
@@ -118,6 +121,13 @@ const Header = () => {
             onClick={() => setIsMenuOpen(false)}
           >
             <Tag className="text-rose-500" size={20} /> Tags
+          </Link>
+          <Link 
+            href="/upload" 
+            className="flex items-center gap-3 p-4 rounded-xl bg-rose-500/10 text-rose-500 transition-colors font-bold"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Upload size={20} /> Upload Video
           </Link>
         </div>
       )}
