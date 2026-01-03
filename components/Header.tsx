@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Play, Search, Users, Menu, X } from 'lucide-react';
+import { Play, Search, Users, Menu, X, Tag } from 'lucide-react';
 import { SITE_NAME } from '../constants';
 
 const Header = () => {
@@ -89,6 +89,9 @@ const Header = () => {
           <Link href="/models" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-2">
             <Users size={18} /> Creators
           </Link>
+          <Link href="/tags" className="text-sm font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+            <Tag size={18} /> Tags
+          </Link>
         </nav>
 
         <button 
@@ -101,13 +104,20 @@ const Header = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden border-t border-slate-800 bg-slate-950 p-4 animate-in slide-in-from-top duration-200">
+        <div className="md:hidden border-t border-slate-800 bg-slate-950 p-4 animate-in slide-in-from-top duration-200 flex flex-col gap-2">
           <Link 
             href="/models" 
             className="flex items-center gap-3 p-4 rounded-xl hover:bg-slate-900 transition-colors font-bold"
             onClick={() => setIsMenuOpen(false)}
           >
             <Users className="text-rose-500" size={20} /> Creators
+          </Link>
+          <Link 
+            href="/tags" 
+            className="flex items-center gap-3 p-4 rounded-xl hover:bg-slate-900 transition-colors font-bold"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <Tag className="text-rose-500" size={20} /> Tags
           </Link>
         </div>
       )}
