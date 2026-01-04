@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Link as LinkIcon, Video, Type, CheckCircle2, AlertCircle, Loader2, Info } from 'lucide-react';
+import { Link as LinkIcon, Video, Type, CheckCircle2, AlertCircle, Loader2, Info, ChevronDown } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { useRouter } from 'next/navigation';
 
@@ -29,18 +29,24 @@ export default function UploadPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const mRes = await fetch('/api/v1/search?q=a');
-        const mData = await mRes.json();
-        setModels(mData.models || []);
+        // Fetch all creators from the models registry API instead of a restricted search
+        const mRes = await fetch('/api/v1/models');
+        if (mRes.ok) {
+          const mData = await mRes.json();
+          // Ensure we handle both potential array response or object with results array
+          setModels(Array.isArray(mData) ? mData : (mData.results || []));
+        }
         
-        // Use standard tags
+        // Load standard tags (could also be fetched from /tags API if needed)
         setTags([
           { slug: 'trending', name: 'Trending' },
           { slug: '4k-ultra', name: '4K Ultra' },
           { slug: 'exclusive', name: 'Exclusive' },
           { slug: 'bts', name: 'Behind Scenes' }
         ]);
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to load upload form data:", e);
+      }
     };
     fetchData();
   }, []);
@@ -58,6 +64,7 @@ export default function UploadPage() {
     e.preventDefault();
     if (!formData.video_url || !formData.title || !formData.modelId) {
       setErrorMessage('Title, Creator, and Video Link are required.');
+      setStatus('error');
       return;
     }
 
@@ -118,7 +125,8 @@ export default function UploadPage() {
                   type="text" 
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all placeholder:text-slate-700"
+                  placeholder="Enter video title"
                 />
               </div>
 
@@ -128,33 +136,48 @@ export default function UploadPage() {
                   rows={3}
                   value={formData.description}
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all resize-none"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all resize-none placeholder:text-slate-700"
+                  placeholder="Describe the content..."
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Creator *</label>
-                  <select 
-                    required
-                    value={formData.modelId}
-                    onChange={(e) => setFormData({...formData, modelId: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all cursor-pointer"
-                  >
-                    <option value="">Select...</option>
-                    {models.map(m => <option key={m.slug} value={m.slug}>{m.name}</option>)}
-                  </select>
+                  <div className="relative">
+                    <select 
+                      required
+                      value={formData.modelId}
+                      onChange={(e) => setFormData({...formData, modelId: e.target.value})}
+                      className="w-full appearance-none bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all cursor-pointer text-slate-200"
+                    >
+                      <option value="" disabled className="text-slate-700">Select...</option>
+                      {models.length > 0 ? (
+                        models.map(m => (
+                          <option key={m.slug || m.id} value={m.slug}>
+                            {m.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No creators found</option>
+                      )}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Access</label>
-                  <select 
-                    value={formData.type}
-                    onChange={(e) => setFormData({...formData, type: e.target.value})}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all"
-                  >
-                    <option value="normal">Standard</option>
-                    <option value="onlyfans">Exclusive</option>
-                  </select>
+                  <div className="relative">
+                    <select 
+                      value={formData.type}
+                      onChange={(e) => setFormData({...formData, type: e.target.value})}
+                      className="w-full appearance-none bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 focus:border-rose-500 outline-none transition-all cursor-pointer"
+                    >
+                      <option value="normal">Standard</option>
+                      <option value="onlyfans">Exclusive</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
+                  </div>
                 </div>
               </div>
 
@@ -198,7 +221,7 @@ export default function UploadPage() {
                   placeholder="https://example.com/video.mp4"
                   value={formData.video_url}
                   onChange={(e) => setFormData({...formData, video_url: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all placeholder:text-slate-800"
                 />
               </div>
 
@@ -211,7 +234,7 @@ export default function UploadPage() {
                   placeholder="https://example.com/preview.mp4"
                   value={formData.preview_url}
                   onChange={(e) => setFormData({...formData, preview_url: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all placeholder:text-slate-800"
                 />
               </div>
 
@@ -224,7 +247,7 @@ export default function UploadPage() {
                   placeholder="https://example.com/cover.jpg"
                   value={formData.thumbnail_url}
                   onChange={(e) => setFormData({...formData, thumbnail_url: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm focus:border-rose-500 outline-none transition-all placeholder:text-slate-800"
                 />
               </div>
             </div>
