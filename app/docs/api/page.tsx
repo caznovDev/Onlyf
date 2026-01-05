@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Terminal, Code, Cpu, Database, Link as LinkIcon, Tag, Copy, Check } from 'lucide-react';
+import { Terminal, Code, Cpu, Database, Link as LinkIcon, Tag, Copy, Check, Clock } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 
 export const runtime = 'edge';
@@ -21,6 +21,7 @@ export default function ApiDocsPage() {
     "title": "4K Cinematic Forest Walk",
     "description": "A high-fidelity drone shot through the redwoods.",
     "modelId": "riley-reid",
+    "duration": 630,
     "type": "normal",
     "tags": ["nature", "4k", "cinematic"],
     "video_url": "https://storage.provider.com/videos/nature_01.mp4",
@@ -39,7 +40,7 @@ export default function ApiDocsPage() {
         <h1 className="text-5xl font-black tracking-tighter">API Upload Guide</h1>
         <p className="text-xl text-slate-400 leading-relaxed">
           The ProVideo API allows creators to programmatically register high-quality video content using direct media links. 
-          No heavy file uploads are required; simply provide the public URLs.
+          Metadata like duration and thumbnails are essential for a complete viewer experience.
         </p>
       </section>
 
@@ -82,22 +83,22 @@ export default function ApiDocsPage() {
                     <td className="py-4 px-2 text-slate-300">The slug of the creator (e.g., "riley-reid").</td>
                   </tr>
                   <tr>
+                    <td className="py-4 px-2 font-mono text-rose-400">duration</td>
+                    <td className="py-4 px-2 text-slate-400">integer</td>
+                    <td className="py-4 px-2 text-slate-500">No</td>
+                    <td className="py-4 px-2 text-slate-300 flex items-center gap-1"><Clock size={12}/> Video length in total seconds.</td>
+                  </tr>
+                  <tr>
                     <td className="py-4 px-2 font-mono text-rose-400">video_url</td>
                     <td className="py-4 px-2 text-slate-400">string (url)</td>
                     <td className="py-4 px-2 text-rose-500 font-bold">Yes</td>
                     <td className="py-4 px-2 text-slate-300">Direct public link to the MP4/MOV file.</td>
                   </tr>
                   <tr>
-                    <td className="py-4 px-2 font-mono text-rose-400">tags</td>
-                    <td className="py-4 px-2 text-slate-400">string[]</td>
+                    <td className="py-4 px-2 font-mono text-rose-400">thumbnail_url</td>
+                    <td className="py-4 px-2 text-slate-400">string (url)</td>
                     <td className="py-4 px-2 text-slate-500">No</td>
-                    <td className="py-4 px-2 text-slate-300">Array of tag names. New tags are created automatically.</td>
-                  </tr>
-                  <tr>
-                    <td className="py-4 px-2 font-mono text-rose-400">type</td>
-                    <td className="py-4 px-2 text-slate-400">enum</td>
-                    <td className="py-4 px-2 text-slate-500">No</td>
-                    <td className="py-4 px-2 text-slate-300">"normal" or "onlyfans". Defaults to "normal".</td>
+                    <td className="py-4 px-2 text-slate-300">Image URL for the video cover.</td>
                   </tr>
                 </tbody>
               </table>
@@ -122,6 +123,7 @@ export default function ApiDocsPage() {
                   &nbsp;&nbsp;-d <span className="text-blue-400">'{'{'}</span><br />
                   &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-rose-400">"title"</span>: <span className="text-emerald-400">"4K Cinematic Forest Walk"</span>,<br />
                   &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-rose-400">"modelId"</span>: <span className="text-emerald-400">"riley-reid"</span>,<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-rose-400">"duration"</span>: <span className="text-amber-400">630</span>,<br />
                   &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-rose-400">"video_url"</span>: <span className="text-emerald-400">"https://cdn.example.com/vid.mp4"</span><br />
                   &nbsp;&nbsp;<span className="text-blue-400">{'}'}'</span>
                 </code>
@@ -153,16 +155,6 @@ export default function ApiDocsPage() {
           <h4 className="font-bold">Instant Sync</h4>
           <p className="text-xs text-slate-400">Metadata is updated in Cloudflare D1 in real-time, making content available across all edge nodes instantly.</p>
         </div>
-      </div>
-
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl flex items-center justify-between">
-        <div>
-          <h3 className="text-xl font-bold">Ready to integrate?</h3>
-          <p className="text-slate-400 text-sm">Contact support for high-volume API keys or dedicated ingest nodes.</p>
-        </div>
-        <button className="bg-white text-black px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">
-          Contact Dev Team
-        </button>
       </div>
     </div>
   );

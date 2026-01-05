@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
       tags = [], 
       video_url, 
       preview_url, 
-      thumbnail_url 
+      thumbnail_url,
+      duration = 0 // New field: duration in seconds
     } = body;
 
     if (!title || !modelId || !video_url) {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       description || '',
       type,
       model.id,
-      0,
+      parseInt(duration) || 0,
       thumbnail_url || 'https://picsum.photos/1280/720',
       video_url, 
       1
