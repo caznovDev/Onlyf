@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { 
   Terminal, Code, Cpu, Database, Link as LinkIcon, Tag, Copy, 
   Check, Clock, Monitor, Smartphone, ShieldCheck, Zap, Users,
-  CheckCircle2, AlertCircle, Search, ArrowRight
+  CheckCircle2, AlertCircle, Search, ArrowRight, Image as ImageIcon
 } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 
@@ -24,10 +24,15 @@ export default function ApiDocsPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "title": "4K Cinematic Forest Walk",
+    "description": "High-fidelity drone footage from the redwood sanctuary.",
     "modelId": "riley-reid",
-    "video_url": "https://cdn.example.com/vid.mp4",
+    "video_url": "https://cdn.example.com/vault/nature_walk.mp4",
+    "thumbnail_url": "https://cdn.example.com/vault/nature_walk_cover.jpg",
+    "duration": 630,
     "resolution": "4K",
-    "orientation": "landscape"
+    "orientation": "landscape",
+    "type": "normal",
+    "tags": ["nature", "cinematic", "4k"]
   }'`;
 
   const creatorCurl = `curl -X POST https://provideo.com/api/v1/models \\
@@ -99,29 +104,75 @@ export default function ApiDocsPage() {
                      <code className="text-rose-500 font-bold text-sm">/api/v1/upload</code>
                    </div>
                    <div className="p-6">
-                     <table className="w-full text-xs text-left">
+                     <table className="w-full text-[11px] text-left">
                         <thead>
                           <tr className="text-slate-500 border-b border-slate-800">
                             <th className="pb-3 font-black uppercase tracking-widest">Field</th>
+                            <th className="pb-3 font-black uppercase tracking-widest">Type</th>
                             <th className="pb-3 font-black uppercase tracking-widest">Required</th>
                             <th className="pb-3 font-black uppercase tracking-widest">Description</th>
                           </tr>
                         </thead>
-                        <tbody className="text-slate-300">
-                          <tr className="border-b border-slate-800/50">
-                            <td className="py-4 font-mono text-rose-400">title</td>
-                            <td className="py-4 text-rose-500 font-bold">Yes</td>
-                            <td className="py-4 italic">Display title for SEO.</td>
-                          </tr>
-                          <tr className="border-b border-slate-800/50">
-                            <td className="py-4 font-mono text-rose-400">modelId</td>
-                            <td className="py-4 text-rose-500 font-bold">Yes</td>
-                            <td className="py-4">The slug of the creator profile.</td>
+                        <tbody className="text-slate-300 divide-y divide-slate-800/50">
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400 font-bold">title</td>
+                            <td className="py-4 text-slate-500">string</td>
+                            <td className="py-4 text-rose-500 font-bold uppercase">Yes</td>
+                            <td className="py-4">The cinematic title. Auto-generates SEO slug.</td>
                           </tr>
                           <tr>
-                            <td className="py-4 font-mono text-rose-400">video_url</td>
-                            <td className="py-4 text-rose-500 font-bold">Yes</td>
-                            <td className="py-4">Public MP4 source link.</td>
+                            <td className="py-4 font-mono text-rose-400 font-bold">modelId</td>
+                            <td className="py-4 text-slate-500">string</td>
+                            <td className="py-4 text-rose-500 font-bold uppercase">Yes</td>
+                            <td className="py-4">The slug of the creator profile (e.g., "riley-reid").</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400 font-bold">video_url</td>
+                            <td className="py-4 text-slate-500">url</td>
+                            <td className="py-4 text-rose-500 font-bold uppercase">Yes</td>
+                            <td className="py-4 flex items-center gap-1"><LinkIcon size={10}/> Direct MP4/WebM source.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">thumbnail_url</td>
+                            <td className="py-4 text-slate-500">url</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4 flex items-center gap-1"><ImageIcon size={10}/> High-res poster frame URL.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">description</td>
+                            <td className="py-4 text-slate-500">text</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4">Long-form content summary for SEO.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">duration</td>
+                            <td className="py-4 text-slate-500">int</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4">Total seconds. Used for UI playback timers.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">resolution</td>
+                            <td className="py-4 text-slate-500">enum</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4">4K, 1080p, or 720p. Defaults to 1080p.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">orientation</td>
+                            <td className="py-4 text-slate-500">enum</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4">landscape or portrait.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">type</td>
+                            <td className="py-4 text-slate-500">enum</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4">normal or onlyfans (Exclusive).</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">tags</td>
+                            <td className="py-4 text-slate-500">array</td>
+                            <td className="py-4 text-slate-600">Optional</td>
+                            <td className="py-4 flex items-center gap-1"><Tag size={10}/> Array of strings (e.g., ["4k", "exclusive"]).</td>
                           </tr>
                         </tbody>
                      </table>
@@ -131,10 +182,10 @@ export default function ApiDocsPage() {
 
               <section className="bg-slate-900/50 border-l-4 border-rose-500 p-8 rounded-r-3xl space-y-4">
                 <h4 className="font-bold flex items-center gap-2 text-rose-500">
-                  <ShieldCheck size={18} /> Pro Tip: Bulk Uploads
+                  <ShieldCheck size={18} /> Pro Tip: Asset Ingestion
                 </h4>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Always use the <strong>Verification API</strong> before pushing video payloads to ensure the associated creator slug exists. This significantly reduces ingestion failures in automated pipelines.
+                  Always provide a <strong>thumbnail_url</strong> if available. If omitted, the platform will attempt to use a default placeholder, which may impact click-through rates on your content.
                 </p>
               </section>
             </div>
@@ -196,10 +247,15 @@ export default function ApiDocsPage() {
                             <td className="py-4 font-bold text-rose-500 uppercase text-[9px]">Required</td>
                             <td className="py-4">Full display name.</td>
                           </tr>
-                          <tr>
+                          <tr className="border-b border-slate-800/50">
                             <td className="py-4 font-mono text-rose-400">slug</td>
                             <td className="py-4 text-slate-500">Optional</td>
                             <td className="py-4">Unique URL identifier. Auto-generated if omitted.</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">thumbnail</td>
+                            <td className="py-4 text-slate-500">Optional</td>
+                            <td className="py-4">Avatar image URL for the creator.</td>
                           </tr>
                         </tbody>
                      </table>
@@ -238,7 +294,7 @@ export default function ApiDocsPage() {
                     {copied === 'curl-main' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                   </button>
                 </div>
-                <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-xs leading-relaxed overflow-x-auto">
+                <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-[10px] leading-relaxed overflow-x-auto">
                   <pre className="text-slate-300">
                     {activeTab === 'videos' ? videoCurl : checkCurl}
                   </pre>
@@ -251,51 +307,4 @@ export default function ApiDocsPage() {
                     <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">Create Profile</h4>
                     <button 
                       onClick={() => copyToClipboard(creatorCurl, 'curl-onboard')}
-                      className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-500 hover:text-white"
-                    >
-                      {copied === 'curl-onboard' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                  <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-xs leading-relaxed overflow-x-auto">
-                    <pre className="text-slate-300">{creatorCurl}</pre>
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
-                <div className="flex items-center gap-2 text-rose-500">
-                  <Database size={16} />
-                  <span className="text-xs font-black uppercase">Edge Latency</span>
-                </div>
-                <p className="text-[10px] text-slate-500 leading-relaxed">
-                  Registry operations are processed by Cloudflare Workers at the closest edge node. Median global propagation for D1 writes is under <span className="text-slate-300 font-bold">200ms</span>.
-                </p>
-                <div className="pt-2">
-                  <div className="w-full bg-slate-800 h-1 rounded-full overflow-hidden">
-                    <div className="bg-rose-500 h-full w-[85%] animate-pulse" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-blue-500/5 border border-blue-500/10 p-8 rounded-3xl space-y-4">
-            <h4 className="text-sm font-black flex items-center gap-2 text-blue-400">
-              <AlertCircle size={18} /> Error Handling
-            </h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-[10px] text-slate-500">
-                <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                <span><strong className="text-slate-300">409 Conflict:</strong> Returned when a creator slug already exists in the registry.</span>
-              </li>
-              <li className="flex items-start gap-3 text-[10px] text-slate-500">
-                <div className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                <span><strong className="text-slate-300">404 Not Found:</strong> Returned during video upload if the provided <code className="text-rose-400 font-mono">modelId</code> is invalid.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+                      className="p-2 hover:bg-white
