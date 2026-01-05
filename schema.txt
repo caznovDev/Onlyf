@@ -16,10 +16,12 @@ CREATE TABLE IF NOT EXISTS videos (
   description TEXT,
   type TEXT CHECK(type IN ('onlyfans', 'normal')) DEFAULT 'normal',
   model_id TEXT,
-  duration INTEGER,
+  duration INTEGER, -- total seconds
   views INTEGER DEFAULT 0,
   thumbnail TEXT,
   hover_preview_url TEXT,
+  resolution TEXT DEFAULT '1080p', -- 4K, 1080p, 720p
+  orientation TEXT DEFAULT 'landscape', -- landscape, portrait
   is_published INTEGER DEFAULT 1,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (model_id) REFERENCES models(id)

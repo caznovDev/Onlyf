@@ -1,6 +1,7 @@
 import React from 'react';
-import { Metadata, ResolvingMetadata } from 'next';
-import { Eye, Clock, Calendar, Zap } from 'lucide-react';
+import { Metadata } from 'next';
+// Fix: Import missing Info icon from lucide-react
+import { Eye, Clock, Calendar, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
@@ -28,14 +29,12 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
 
     if (!video) return null;
 
-    // Fetch tags for this video
     const { results: tags } = await db.prepare(`
       SELECT t.* FROM tags t
       JOIN video_tags vt ON t.id = vt.tag_id
       WHERE vt.video_id = ?
     `).bind(video.id).all();
 
-    // Fetch recommended videos (similar model or random)
     const recOffset = (recPage - 1) * recLimit;
     const { results: recVideos } = await db.prepare(`
       SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
@@ -58,6 +57,8 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
       views: v.views,
       thumbnail: v.thumbnail,
       hoverPreviewUrl: v.hover_preview_url,
+      resolution: v.resolution,
+      orientation: v.orientation,
       createdAt: v.created_at,
       model: {
         id: v.model_id,
@@ -85,13 +86,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
   const video = await db?.prepare("SELECT title, description FROM videos WHERE slug = ?").bind(slug).first();
-  
   if (!video) return { title: 'Video Not Found' };
-
-  return {
-    title: video.title,
-    description: video.description.slice(0, 160),
-  };
+  return { title: video.title, description: video.description.slice(0, 160) };
 }
 
 export default async function VideoPage({ params, searchParams }: Props) {
@@ -111,83 +107,94 @@ export default async function VideoPage({ params, searchParams }: Props) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const breadcrumbs = [
-    { label: 'Videos', href: '/' },
-    { label: video.model.name, href: `/models/${video.model.slug}` },
-    { label: video.title, href: `/video/${video.slug}` },
-  ];
-
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-in pb-12">
-      <Breadcrumbs items={breadcrumbs} />
+    <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-20">
+      <Breadcrumbs items={[
+        { label: 'Videos', href: '/' },
+        { label: video.model.name, href: `/models/${video.model.slug}` },
+        { label: video.title, href: `/video/${slug}` }
+      ]} />
 
-      <div className="space-y-4">
-        <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
-          {video.title}
-        </h1>
-        
-        <div className="flex flex-wrap items-center gap-6 text-sm text-slate-400">
-          <Link href={`/models/${video.model.slug}`} className="flex items-center gap-2 hover:text-rose-500 transition-colors">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-700">
-              <img src={video.model.thumbnail} alt="" className="w-full h-full object-cover" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="lg:col-span-8 space-y-8">
+          <div className={`bg-black rounded-[2rem] overflow-hidden border border-slate-800 shadow-2xl relative ring-1 ring-white/5 ${video.orientation === 'portrait' ? 'max-w-md mx-auto aspect-[9/16]' : 'aspect-video'}`}>
+            <video 
+              src={video.hoverPreviewUrl} 
+              controls 
+              className="w-full h-full object-contain"
+              poster={video.thumbnail}
+            />
+            <div className="absolute top-6 left-6 flex gap-2">
+              <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg">
+                {video.resolution}
+              </span>
+              {video.type === 'onlyfans' && (
+                <span className="bg-black/80 backdrop-blur-md text-amber-500 text-[10px] font-black px-3 py-1 rounded-full border border-amber-500/30 flex items-center gap-1">
+                  <ShieldCheck size={10} /> EXCLUSIVE
+                </span>
+              )}
             </div>
-            <span className="font-bold text-slate-200">{video.model.name}</span>
-          </Link>
-          <div className="flex items-center gap-1.5"><Eye size={16}/> {video.views.toLocaleString()} views</div>
-          <div className="flex items-center gap-1.5"><Clock size={16}/> {formatDuration(video.duration)}</div>
-          <div className="flex items-center gap-1.5"><Calendar size={16}/> {new Date(video.createdAt).toLocaleDateString()}</div>
+          </div>
+
+          <div className="space-y-6 px-2">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1.1]">
+              {video.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-6 text-xs font-bold text-slate-500 uppercase tracking-widest">
+               <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl text-slate-300">
+                  <Eye size={14} className="text-rose-500" /> {video.views.toLocaleString()} Views
+               </div>
+               <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl text-slate-300">
+                  <Clock size={14} className="text-rose-500" /> {formatDuration(video.duration)}
+               </div>
+               <div className="flex items-center gap-2 bg-slate-900 px-3 py-2 rounded-xl text-slate-300">
+                  {video.orientation === 'portrait' ? <Smartphone size={14} /> : <Monitor size={14} />} 
+                  {video.orientation}
+               </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/50 rounded-[2rem] p-8 border border-slate-800 space-y-4">
+            <h2 className="text-lg font-black flex items-center gap-2">
+              <Info size={20} className="text-rose-500" /> About this Production
+            </h2>
+            <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
+              {video.description || "No professional description provided."}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="aspect-video bg-black rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative group">
-        <video 
-          src={video.hoverPreviewUrl} 
-          controls 
-          className="w-full h-full object-contain"
-          poster={video.thumbnail}
-        />
-      </div>
+        <div className="lg:col-span-4 space-y-10">
+          <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 space-y-6 shadow-xl">
+             <div className="flex items-center gap-4">
+                <img src={video.model.thumbnail} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-rose-500/20" />
+                <div>
+                   <h3 className="text-xl font-black">{video.model.name}</h3>
+                   <Link href={`/models/${video.model.slug}`} className="text-rose-500 text-xs font-bold uppercase tracking-widest hover:underline">
+                      View Profile
+                   </Link>
+                </div>
+             </div>
+             <div className="flex flex-wrap gap-2 pt-4">
+               {video.tags.map(t => (
+                 <Link key={t.id} href={`/tags/${t.slug}`} className="bg-slate-950 border border-slate-800 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-500 transition-colors">
+                   #{t.name}
+                 </Link>
+               ))}
+             </div>
+          </div>
 
-      <div className="space-y-8">
-        <div className="bg-slate-900/50 rounded-2xl p-6 border border-slate-800">
-          <h2 className="text-xl font-bold mb-4">About this video</h2>
-          <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">
-            {video.description}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {video.tags.map(tag => (
-            <Link key={tag.id} href={`/tags/${tag.slug}`} className="bg-slate-800 hover:bg-slate-700 transition-colors px-4 py-1.5 rounded-full text-xs font-medium">
-              #{tag.name}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div className="pt-12 border-t border-slate-800">
-        <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-          <Zap size={24} className="text-rose-500" /> More Like This
-        </h2>
-        
-        {recommendations.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {recommendations.map(v => (
+          <div className="space-y-6">
+            <h3 className="text-xl font-black flex items-center gap-2 px-2">
+              <Zap size={20} className="text-rose-500" /> Trending Now
+            </h3>
+            <div className="grid grid-cols-1 gap-6">
+              {recommendations.slice(0, 4).map(v => (
                 <VideoCard key={v.id} video={v} />
               ))}
             </div>
-            <div className="mt-8">
-              <Pagination 
-                currentPage={recPage} 
-                totalPages={totalRecPages} 
-                baseUrl={`/video/${slug}`} 
-              />
-            </div>
-          </>
-        ) : (
-          <p className="text-slate-500">No other videos to recommend.</p>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );
