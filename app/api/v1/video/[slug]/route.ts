@@ -7,8 +7,6 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  
-  // Fix: Cast process.env.DB to any to allow access to D1 methods like .prepare() and resolve type mismatch
   const db: any = process.env.DB;
 
   if (!db || typeof db === 'string') {
@@ -30,6 +28,64 @@ export async function GET(
     return NextResponse.json(video, {
       headers: { "Cache-Control": "public, max-age=3600" }
     });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const db: any = process.env.DB;
+
+  if (!db || typeof db === 'string') {
+    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const { 
+      title, 
+      description, 
+      type, 
+      thumbnail, 
+      resolution, 
+      orientation, 
+      is_published,
+      duration 
+    } = body;
+
+    const result = await db.prepare(`
+      UPDATE videos 
+      SET 
+        title = COALESCE(?, title),
+        description = COALESCE(?, description),
+        type = COALESCE(?, type),
+        thumbnail = COALESCE(?, thumbnail),
+        resolution = COALESCE(?, resolution),
+        orientation = COALESCE(?, orientation),
+        is_published = COALESCE(?, is_published),
+        duration = COALESCE(?, duration)
+      WHERE slug = ?
+    `).bind(
+      title, 
+      description, 
+      type, 
+      thumbnail, 
+      resolution, 
+      orientation, 
+      is_published,
+      duration,
+      slug
+    ).run();
+
+    if (result.meta.changes === 0) {
+      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Metadata synced to edge." });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
