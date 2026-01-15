@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { 
       title, 
       description, 
-      modelId, 
+      modelId, // This can be UUID or Slug
       type = 'normal', 
       tags = [], 
       video_url, 
@@ -35,20 +35,21 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!title || !modelId || !video_url) {
-      return NextResponse.json({ error: "Title, Creator, and Video URL are required." }, { status: 400 });
+      return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { status: 400 });
     }
 
-    // 1. Resolve Creator
-    const model = await db.prepare("SELECT id FROM models WHERE slug = ?").bind(modelId).first();
+    // Improved lookup: Try ID first, then Slug
+    let model = await db.prepare("SELECT id FROM models WHERE id = ? OR slug = ?").bind(modelId, modelId).first();
+    
     if (!model) {
-      return NextResponse.json({ error: "Creator not found" }, { status: 404 });
+      return NextResponse.json({ error: `Creator with ID/Slug '${modelId}' not found in registry.` }, { status: 404 });
     }
 
     const videoId = crypto.randomUUID();
     const baseSlug = slugify(title);
     const finalSlug = `${baseSlug}-${videoId.slice(0, 8)}`;
 
-    // 2. Insert with expanded metadata
+    // Insert video
     await db.prepare(`
       INSERT INTO videos (
         id, title, slug, description, type, model_id, duration, 
@@ -70,11 +71,11 @@ export async function POST(request: NextRequest) {
       1
     ).run();
 
-    // 3. Update Creator Stats
+    // Update Creator Stats
     await db.prepare("UPDATE models SET videos_count = (SELECT COUNT(*) FROM videos WHERE model_id = ?) WHERE id = ?")
       .bind(model.id, model.id).run();
 
-    // 4. Tagging Logic
+    // Tagging Logic
     if (Array.isArray(tags) && tags.length > 0) {
       for (const tagName of tags) {
         const tagSlug = slugify(tagName);
@@ -97,6 +98,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       slug: finalSlug,
+      videoId: videoId,
       message: "Professional content registered to global edge."
     }, { status: 201 });
 

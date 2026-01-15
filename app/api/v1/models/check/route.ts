@@ -26,11 +26,12 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      exists: true, 
+      exists: true,
+      id: model.id, // Explicitly return the UUID for external scripts
       model 
     }, { 
       status: 200,
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=30" }
+      headers: { "Cache-Control": "public, s-maxage=10" }
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
