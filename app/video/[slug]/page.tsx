@@ -1,11 +1,9 @@
 import React from 'react';
 import { Metadata } from 'next';
-// Fix: Import missing Info icon from lucide-react
 import { Eye, Clock, Calendar, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
-import Pagination from '../../../components/Pagination';
 import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
@@ -123,6 +121,9 @@ export default async function VideoPage({ params, searchParams }: Props) {
               controls 
               className="w-full h-full object-contain"
               poster={video.thumbnail}
+              preload="metadata"
+              referrerPolicy="no-referrer"
+              playsInline
             />
             <div className="absolute top-6 left-6 flex gap-2">
               <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg">
@@ -167,7 +168,7 @@ export default async function VideoPage({ params, searchParams }: Props) {
         <div className="lg:col-span-4 space-y-10">
           <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 space-y-6 shadow-xl">
              <div className="flex items-center gap-4">
-                <img src={video.model.thumbnail} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-rose-500/20" />
+                <img src={video.model.thumbnail} referrerPolicy="no-referrer" className="w-16 h-16 rounded-2xl object-cover ring-2 ring-rose-500/20" />
                 <div>
                    <h3 className="text-xl font-black">{video.model.name}</h3>
                    <Link href={`/models/${video.model.slug}`} className="text-rose-500 text-xs font-bold uppercase tracking-widest hover:underline">

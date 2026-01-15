@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const { 
       title, 
       description, 
-      modelId, // This can be UUID or Slug
+      modelId, 
       type = 'normal', 
       tags = [], 
       video_url, 
@@ -38,18 +38,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { status: 400 });
     }
 
-    // Improved lookup: Try ID first, then Slug
+    // Polymorphic lookup: Try ID first, then Slug
     let model = await db.prepare("SELECT id FROM models WHERE id = ? OR slug = ?").bind(modelId, modelId).first();
     
     if (!model) {
-      return NextResponse.json({ error: `Creator with ID/Slug '${modelId}' not found in registry.` }, { status: 404 });
+      return NextResponse.json({ error: `Creator '${modelId}' not found.` }, { status: 404 });
     }
 
     const videoId = crypto.randomUUID();
     const baseSlug = slugify(title);
     const finalSlug = `${baseSlug}-${videoId.slice(0, 8)}`;
 
-    // Insert video
     await db.prepare(`
       INSERT INTO videos (
         id, title, slug, description, type, model_id, duration, 
@@ -63,7 +62,7 @@ export async function POST(request: NextRequest) {
       description || '',
       type,
       model.id,
-      parseInt(duration) || 0,
+      parseInt(duration.toString()) || 0,
       thumbnail_url || '',
       video_url,
       resolution,
@@ -75,7 +74,7 @@ export async function POST(request: NextRequest) {
     await db.prepare("UPDATE models SET videos_count = (SELECT COUNT(*) FROM videos WHERE model_id = ?) WHERE id = ?")
       .bind(model.id, model.id).run();
 
-    // Tagging Logic
+    // Tagging
     if (Array.isArray(tags) && tags.length > 0) {
       for (const tagName of tags) {
         const tagSlug = slugify(tagName);
@@ -98,12 +97,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       slug: finalSlug,
-      videoId: videoId,
-      message: "Professional content registered to global edge."
+      id: videoId
     }, { status: 201 });
 
   } catch (e: any) {
-    console.error('Upload error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }

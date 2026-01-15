@@ -13,16 +13,33 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (isHovered) {
-      hoverTimer.current = setTimeout(() => setShowPreview(true), 500);
+      hoverTimer.current = setTimeout(() => {
+        setShowPreview(true);
+        // Dispatch event to pause other playing videos
+        window.dispatchEvent(new CustomEvent('pvideo:play', { detail: { id: video.id } }));
+      }, 500);
     } else {
       if (hoverTimer.current) clearTimeout(hoverTimer.current);
       setShowPreview(false);
     }
     return () => { if (hoverTimer.current) clearTimeout(hoverTimer.current); };
-  }, [isHovered]);
+  }, [isHovered, video.id]);
+
+  // Listen for other videos playing to stop this one if it's currently active
+  useEffect(() => {
+    const handleGlobalPlay = (e: any) => {
+      if (e.detail.id !== video.id && showPreview) {
+        setShowPreview(false);
+        setIsHovered(false);
+      }
+    };
+    window.addEventListener('pvideo:play', handleGlobalPlay);
+    return () => window.removeEventListener('pvideo:play', handleGlobalPlay);
+  }, [video.id, showPreview]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -42,20 +59,25 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/video/${video.slug}`} className="relative aspect-video overflow-hidden">
+      <Link href={`/video/${video.slug}`} className="relative aspect-video overflow-hidden bg-slate-800">
         <img 
           src={video.thumbnail} 
           alt={video.title}
+          referrerPolicy="no-referrer"
           className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 ${showPreview ? 'opacity-0' : 'opacity-100'}`}
           loading="lazy"
         />
         
         {showPreview && (
           <video
+            ref={videoRef}
             src={video.hoverPreviewUrl}
             autoPlay
             muted
             loop
+            playsInline
+            preload="metadata"
+            referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover animate-in fade-in duration-300"
           />
         )}

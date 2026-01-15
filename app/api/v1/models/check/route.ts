@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       exists: true,
-      id: model.id, // Explicitly return the UUID for external scripts
+      id: model.id,
       model 
     }, { 
       status: 200,
