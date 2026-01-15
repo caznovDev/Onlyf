@@ -5,7 +5,7 @@ import {
   Terminal, Code, Cpu, Database, Link as LinkIcon, Tag, Copy, 
   Check, Clock, Monitor, Smartphone, ShieldCheck, Zap, Users,
   CheckCircle2, AlertCircle, Search, ArrowRight, Image as ImageIcon,
-  Edit3, Play
+  Edit3, Play, UserPlus
 } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 
@@ -21,7 +21,7 @@ export default function ApiDocsPage() {
     setTimeout(() => setCopied(null), 2000);
   };
 
-  const videoRegisterCurl = `curl -X POST https://provideo.com/api/v1/upload \\
+  const videoRegisterCurl = `curl -X POST https://onlyfree007.pages.dev/api/v1/upload \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "4K Cinematic Forest Walk",
@@ -36,7 +36,7 @@ export default function ApiDocsPage() {
     "tags": ["nature", "4k"]
   }'`;
 
-  const videoPatchCurl = `curl -X PATCH https://provideo.com/api/v1/video/4k-cinematic-forest-walk \\
+  const videoPatchCurl = `curl -X PATCH https://onlyfree007.pages.dev/api/v1/video/4k-cinematic-forest-walk \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "Updated: 4K Forest Walk (Final Cut)",
@@ -44,16 +44,18 @@ export default function ApiDocsPage() {
     "resolution": "4K"
   }'`;
 
-  const videoCheckCurl = `curl https://provideo.com/api/v1/videos/check?slug=4k-cinematic-forest-walk`;
+  const videoCheckCurl = `curl https://onlyfree007.pages.dev/api/v1/videos/check?slug=4k-cinematic-forest-walk`;
 
-  const creatorCurl = `curl -X POST https://provideo.com/api/v1/models \\
+  const creatorCreateCurl = `curl -X POST https://onlyfree007.pages.dev/api/v1/models \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Jane Doe",
     "slug": "jane-doe",
-    "bio": "Cinematographer...",
-    "thumbnail": "https://cdn.example.com/jane.jpg"
+    "bio": "Cinematographer and digital artist specializing in 4K outdoor aesthetics.",
+    "thumbnail": "https://cdn.example.com/portraits/jane-doe.jpg"
   }'`;
+
+  const creatorCheckCurl = `curl https://onlyfree007.pages.dev/api/v1/models/check?slug=jane-doe`;
 
   return (
     <div className="max-w-6xl mx-auto py-8 space-y-12 animate-fade-in pb-32 px-4">
@@ -116,16 +118,6 @@ export default function ApiDocsPage() {
                    </div>
                    <div className="p-6">
                       <p className="text-sm text-slate-400 mb-4">Parameter: <code className="bg-slate-950 px-1.5 py-0.5 rounded text-rose-400">slug</code> (required)</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                          <div className="text-[10px] font-black text-emerald-500 mb-2 uppercase">Exists (200)</div>
-                          <pre className="text-[10px] text-slate-400 font-mono">{"{\n  \"exists\": true,\n  \"video\": { ... }\n}"}</pre>
-                        </div>
-                        <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                          <div className="text-[10px] font-black text-slate-500 mb-2 uppercase">Missing (200)</div>
-                          <pre className="text-[10px] text-slate-400 font-mono">{"{\n  \"exists\": false\n}"}</pre>
-                        </div>
-                      </div>
                    </div>
                 </div>
               </section>
@@ -154,114 +146,93 @@ export default function ApiDocsPage() {
                             <th className="pb-3 font-black uppercase tracking-widest">Field</th>
                             <th className="pb-3 font-black uppercase tracking-widest">Type</th>
                             <th className="pb-3 font-black uppercase tracking-widest">Status</th>
-                            <th className="pb-3 font-black uppercase tracking-widest">Default</th>
                           </tr>
                         </thead>
                         <tbody className="text-slate-300 divide-y divide-slate-800/50">
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400 font-bold">title</td>
-                            <td className="py-4 text-slate-500">string</td>
-                            <td className="py-4 text-rose-500 font-bold uppercase">Req</td>
-                            <td className="py-4">-</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400 font-bold">modelId</td>
-                            <td className="py-4 text-slate-500">string</td>
-                            <td className="py-4 text-rose-500 font-bold uppercase">Req</td>
-                            <td className="py-4">-</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400 font-bold">video_url</td>
-                            <td className="py-4 text-slate-500">url</td>
-                            <td className="py-4 text-rose-500 font-bold uppercase">Req</td>
-                            <td className="py-4">-</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400">thumbnail_url</td>
-                            <td className="py-4 text-slate-500">url</td>
-                            <td className="py-4 text-slate-600">Opt</td>
-                            <td className="py-4">null</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400">resolution</td>
-                            <td className="py-4 text-slate-500">enum</td>
-                            <td className="py-4 text-slate-600">Opt</td>
-                            <td className="py-4">1080p</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400">orientation</td>
-                            <td className="py-4 text-slate-500">enum</td>
-                            <td className="py-4 text-slate-600">Opt</td>
-                            <td className="py-4">landscape</td>
-                          </tr>
-                          <tr>
-                            <td className="py-4 font-mono text-rose-400">is_published</td>
-                            <td className="py-4 text-slate-500">boolean</td>
-                            <td className="py-4 text-slate-600">Opt</td>
-                            <td className="py-4">1</td>
-                          </tr>
+                          <tr><td className="py-4 font-mono text-rose-400 font-bold">title</td><td className="py-4 text-slate-500">string</td><td className="py-4 text-rose-500 font-bold uppercase">Req</td></tr>
+                          <tr><td className="py-4 font-mono text-rose-400 font-bold">modelId</td><td className="py-4 text-slate-500">string</td><td className="py-4 text-rose-500 font-bold uppercase">Req</td></tr>
+                          <tr><td className="py-4 font-mono text-rose-400 font-bold">video_url</td><td className="py-4 text-slate-500">url</td><td className="py-4 text-rose-500 font-bold uppercase">Req</td></tr>
                         </tbody>
                      </table>
                    </div>
                 </div>
               </section>
-
-              {/* 3. Video Metadata Update */}
-              <section className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-500">
-                    <Edit3 size={24} />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black tracking-tight">3. Metadata Updates</h2>
-                    <p className="text-slate-400 text-sm">Update specific fields for existing edge assets.</p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-                   <div className="px-6 py-4 bg-slate-800/20 border-b border-slate-800 flex items-center gap-3">
-                     <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded">PATCH</span>
-                     <code className="text-rose-500 font-bold text-sm">/api/v1/video/[slug]</code>
-                   </div>
-                   <div className="p-6">
-                      <p className="text-sm text-slate-400 leading-relaxed">
-                        Send only the fields you wish to change. The API uses partial updates (<code className="text-rose-400">COALESCE</code>) to preserve existing metadata for omitted fields.
-                      </p>
-                   </div>
-                </div>
-              </section>
             </div>
           ) : (
-            <div className="space-y-12 animate-in fade-in slide-in-from-left-4 duration-500">
-              {/* Creator Section (as previously defined) */}
+            <div className="space-y-20 animate-in fade-in slide-in-from-left-4 duration-500">
+              {/* 1. Creator Verification */}
               <section className="space-y-6">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
                     <Search size={24} />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black tracking-tight">1. Verification</h2>
-                    <p className="text-slate-400 text-sm">Check if a creator is already in the edge registry.</p>
+                    <h2 className="text-3xl font-black tracking-tight">1. Identity Check</h2>
+                    <p className="text-slate-400 text-sm">Verify if a creator exists in the global edge registry.</p>
                   </div>
                 </div>
-                {/* ... existing creator docs ... */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6">
-                  <p className="text-sm text-slate-400">Endpoint: <code className="text-rose-500">GET /api/v1/models/check?slug=[slug]</code></p>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                   <div className="px-6 py-4 bg-slate-800/20 border-b border-slate-800 flex items-center gap-3">
+                     <span className="bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded">GET</span>
+                     <code className="text-rose-500 font-bold text-sm">/api/v1/models/check</code>
+                   </div>
+                   <div className="p-6">
+                      <p className="text-sm text-slate-400">Parameter: <code className="bg-slate-950 px-1.5 py-0.5 rounded text-rose-400">slug</code></p>
+                   </div>
                 </div>
               </section>
 
+              {/* 2. Creator Registration */}
               <section className="space-y-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500">
-                    <CheckCircle2 size={24} />
+                  <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-500">
+                    <UserPlus size={24} />
                   </div>
                   <div>
                     <h2 className="text-3xl font-black tracking-tight">2. Onboarding</h2>
-                    <p className="text-slate-400 text-sm">Programmatically create new creator identities.</p>
+                    <p className="text-slate-400 text-sm">Initialize a new creator profile for content distribution.</p>
                   </div>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden p-6">
-                  <p className="text-sm text-slate-400">Endpoint: <code className="text-rose-500">POST /api/v1/models</code></p>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                   <div className="px-6 py-4 bg-slate-800/20 border-b border-slate-800 flex items-center gap-3">
+                     <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded">POST</span>
+                     <code className="text-rose-500 font-bold text-sm">/api/v1/models</code>
+                   </div>
+                   <div className="p-6 overflow-x-auto">
+                     <table className="w-full text-[11px] text-left border-collapse">
+                        <thead>
+                          <tr className="text-slate-500 border-b border-slate-800">
+                            <th className="pb-3 font-black uppercase tracking-widest">Field</th>
+                            <th className="pb-3 font-black uppercase tracking-widest">Type</th>
+                            <th className="pb-3 font-black uppercase tracking-widest">Requirement</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-300 divide-y divide-slate-800/50">
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400 font-bold">name</td>
+                            <td className="py-4 text-slate-500">string</td>
+                            <td className="py-4 text-rose-500 font-bold uppercase">Required</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">slug</td>
+                            <td className="py-4 text-slate-500">string</td>
+                            <td className="py-4 text-slate-500 uppercase font-bold">Optional</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">bio</td>
+                            <td className="py-4 text-slate-500">text</td>
+                            <td className="py-4 text-slate-500 uppercase font-bold">Optional</td>
+                          </tr>
+                          <tr>
+                            <td className="py-4 font-mono text-rose-400">thumbnail</td>
+                            <td className="py-4 text-slate-500">url</td>
+                            <td className="py-4 text-slate-500 uppercase font-bold">Optional</td>
+                          </tr>
+                        </tbody>
+                     </table>
+                   </div>
                 </div>
               </section>
             </div>
@@ -276,69 +247,55 @@ export default function ApiDocsPage() {
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                  <Code size={14} className="text-rose-500" /> API Examples
                </span>
-               <div className="flex gap-1">
-                 <div className="w-2 h-2 rounded-full bg-rose-500/50" />
-                 <div className="w-2 h-2 rounded-full bg-amber-500/50" />
-                 <div className="w-2 h-2 rounded-full bg-emerald-500/50" />
-               </div>
             </div>
 
             <div className="p-8 space-y-10">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                    {activeTab === 'videos' ? 'Register Asset' : 'Verify Creator'}
+                    {activeTab === 'videos' ? 'Register Video' : 'Register Creator'}
                   </h4>
                   <button 
-                    onClick={() => copyToClipboard(activeTab === 'videos' ? videoRegisterCurl : videoCheckCurl, 'curl-v-reg')}
+                    onClick={() => copyToClipboard(activeTab === 'videos' ? videoRegisterCurl : creatorCreateCurl, 'curl-primary')}
                     className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-500 hover:text-white"
                   >
-                    {copied === 'curl-v-reg' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                    {copied === 'curl-primary' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                   </button>
                 </div>
                 <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-[10px] leading-relaxed overflow-x-auto">
-                  <pre className="text-slate-300">
-                    {activeTab === 'videos' ? videoRegisterCurl : videoCheckCurl}
+                  <pre className="text-slate-300 whitespace-pre-wrap">
+                    {activeTab === 'videos' ? videoRegisterCurl : creatorCreateCurl}
                   </pre>
                 </div>
               </div>
 
-              {activeTab === 'videos' && (
-                <div className="space-y-4 pt-6 border-t border-slate-800/50">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">Patch Metadata</h4>
-                    <button 
-                      onClick={() => copyToClipboard(videoPatchCurl, 'curl-v-patch')}
-                      className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-500 hover:text-white"
-                    >
-                      {copied === 'curl-v-patch' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                  <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-[10px] leading-relaxed overflow-x-auto">
-                    <pre className="text-slate-300">{videoPatchCurl}</pre>
-                  </div>
+              <div className="space-y-4 pt-6 border-t border-slate-800/50">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                    {activeTab === 'videos' ? 'Check Status' : 'Verify Slug'}
+                  </h4>
+                  <button 
+                    onClick={() => copyToClipboard(activeTab === 'videos' ? videoCheckCurl : creatorCheckCurl, 'curl-secondary')}
+                    className="p-2 hover:bg-white/5 rounded-lg transition-colors text-slate-500 hover:text-white"
+                  >
+                    {copied === 'curl-secondary' ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                  </button>
                 </div>
-              )}
+                <div className="bg-black p-6 rounded-2xl border border-white/5 font-mono text-[10px] leading-relaxed overflow-x-auto">
+                  <pre className="text-slate-300">{activeTab === 'videos' ? videoCheckCurl : creatorCheckCurl}</pre>
+                </div>
+              </div>
 
               <div className="bg-slate-950 p-6 rounded-2xl border border-slate-800 space-y-4">
                 <div className="flex items-center gap-2 text-rose-500">
                   <Database size={16} />
-                  <span className="text-xs font-black uppercase">Technical Spec</span>
+                  <span className="text-xs font-black uppercase">Edge Policy</span>
                 </div>
                 <p className="text-[10px] text-slate-500 leading-relaxed">
-                  Video slugs are immutable. To change a slug, you must <span className="text-slate-300 font-bold">Delete</span> and <span className="text-slate-300 font-bold">Re-register</span>. All other metadata supports atomic updates.
+                  Registry updates are propagated to global edge locations within <span className="text-slate-300 font-bold">150ms</span>. Slugs are used as primary keys for CDN caching.
                 </p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-emerald-500/5 border border-emerald-500/10 p-8 rounded-3xl space-y-4">
-            <h4 className="text-sm font-black flex items-center gap-2 text-emerald-400">
-              <ShieldCheck size={18} /> Compliance & Safety
-            </h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Every registry update triggers an automated legal verification workflow. Metadata is indexed by edge bots for SEO within <span className="text-slate-300 font-bold">5 minutes</span> of registration.
-            </p>
           </div>
         </div>
       </div>
