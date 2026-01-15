@@ -1,6 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { Eye, Clock, Calendar, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-react';
+import { Eye, Clock, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
@@ -97,7 +97,7 @@ export default async function VideoPage({ params, searchParams }: Props) {
   const data = await getVideoData(slug, recPage, recLimit);
   if (!data) notFound();
 
-  const { video, recommendations, totalRecPages } = data;
+  const { video, recommendations } = data;
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -167,7 +167,7 @@ export default async function VideoPage({ params, searchParams }: Props) {
         <div className="lg:col-span-4 space-y-10">
           <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-8 space-y-6 shadow-xl">
              <div className="flex items-center gap-4">
-                <img src={video.model.thumbnail} referrerPolicy="no-referrer" className="w-16 h-16 rounded-2xl object-cover ring-2 ring-rose-500/20" />
+                <img src={video.model.thumbnail} className="w-16 h-16 rounded-2xl object-cover ring-2 ring-rose-500/20" alt={video.model.name} />
                 <div>
                    <h3 className="text-xl font-black">{video.model.name}</h3>
                    <Link href={`/models/${video.model.slug}`} className="text-rose-500 text-xs font-bold uppercase tracking-widest hover:underline">
