@@ -122,7 +122,6 @@ export default async function VideoPage({ params, searchParams }: Props) {
               className="w-full h-full object-contain"
               poster={video.thumbnail}
               preload="metadata"
-              referrerPolicy="no-referrer"
               playsInline
             />
             <div className="absolute top-6 left-6 flex gap-2">
