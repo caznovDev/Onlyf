@@ -6,11 +6,11 @@ import Footer from '../components/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'ProVideo - Professional Video Platform',
-    template: '%s | ProVideo'
+    default: 'FreeOF - Professional Video Platform',
+    template: '%s | FreeOF'
   },
   description: 'High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.',
-  metadataBase: new URL('https://provideo.com'),
+  metadataBase: new URL('https://freeof.qzz.io'),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

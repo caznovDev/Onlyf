@@ -1,8 +1,8 @@
 
 import { Video, Model, Tag } from './types';
 
-export const SITE_NAME = 'ProVideo';
-export const DOMAIN = 'provideo.com';
+export const SITE_NAME = 'FreeOF';
+export const DOMAIN = 'freeof.qzz.io';
 
 export const MOCK_MODELS: Model[] = [
   {

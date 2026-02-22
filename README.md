@@ -1,5 +1,5 @@
 
-# ProVideo Platform - Professional Video Hub
+# FreeOF Platform - Professional Video Hub
 
 A high-performance, SEO-first video platform leveraging Cloudflare Pages and Functions.
 
@@ -8,8 +8,8 @@ A high-performance, SEO-first video platform leveraging Cloudflare Pages and Fun
 ### 1. Database Setup
 Create your D1 database and initialize it.
 ```bash
-npx wrangler d1 create provideo_db
-npx wrangler d1 execute provideo_db --file=./schema.sql
+npx wrangler d1 create freeof_db
+npx wrangler d1 execute freeof_db --file=./schema.sql
 ```
 
 ### 2. Bind the Database
@@ -17,7 +17,7 @@ In your Cloudflare Pages project settings:
 1. Go to **Settings** > **Functions**.
 2. Add a **D1 database binding**.
 3. **Variable name**: `DB`
-4. **Database**: `provideo_db`
+4. **Database**: `freeof_db`
 
 ### 3. Folder Structure
 The API logic now lives in the `/functions` directory:
