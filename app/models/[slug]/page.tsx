@@ -71,13 +71,29 @@ async function getModelData(slug: string, page: number, limit: number) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
-  const model = await db?.prepare("SELECT name, bio FROM models WHERE slug = ?").bind(slug).first();
+  const model = await db?.prepare("SELECT name, bio, thumbnail FROM models WHERE slug = ?").bind(slug).first();
   
   if (!model) return { title: 'Creator Not Found' };
   
   return {
     title: `${model.name} - Creator Profile`,
     description: model.bio,
+    openGraph: {
+      title: `${model.name} - Professional Creator`,
+      description: model.bio,
+      images: [{ url: model.thumbnail }],
+      type: 'profile',
+      username: model.slug,
+    },
+    twitter: {
+      card: 'summary',
+      title: model.name,
+      description: model.bio,
+      images: [model.thumbnail],
+    },
+    alternates: {
+      canonical: `/models/${slug}`,
+    },
   };
 }
 
@@ -97,8 +113,22 @@ export default async function ModelProfilePage({ params, searchParams }: Props) 
     { label: model.name, href: `/models/${model.slug}` }
   ];
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: model.name,
+    description: model.bio,
+    image: model.thumbnail,
+    url: `https://freeof.qzz.io/models/${model.slug}`,
+    jobTitle: 'Professional Video Creator',
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Breadcrumbs items={breadcrumbs} />
 
       <div className="space-y-12">

@@ -1,9 +1,18 @@
 import React from 'react';
+import { Metadata } from 'next';
 import { Tag as TagIcon } from 'lucide-react';
 import Link from 'next/link';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 export const runtime = 'edge';
+
+export const metadata: Metadata = {
+  title: 'Browse Video Categories & Tags | FreeOF',
+  description: 'Explore professional videos by category and tag. Find exactly what you are looking for in our high-quality cinematic library.',
+  alternates: {
+    canonical: '/tags',
+  },
+};
 
 async function getTags() {
   const db = process.env.DB as any;

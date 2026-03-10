@@ -1,10 +1,19 @@
 import React from 'react';
+import { Metadata } from 'next';
 import { TrendingUp } from 'lucide-react';
 import VideoCard from '../components/VideoCard';
 import Pagination from '../components/Pagination';
 import Breadcrumbs from '../components/Breadcrumbs';
 
 export const runtime = 'edge';
+
+export const metadata: Metadata = {
+  title: 'Trending Professional Videos | FreeOF',
+  description: 'Discover the most popular and trending professional videos on FreeOF. High-quality content from top creators around the world.',
+  alternates: {
+    canonical: '/',
+  },
+};
 
 async function getVideos(page: number, limit: number) {
   const db = process.env.DB as any;

@@ -83,9 +83,34 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
-  const video = await db?.prepare("SELECT title, description FROM videos WHERE slug = ?").bind(slug).first();
+  const video = await db?.prepare(`
+    SELECT v.title, v.description, v.thumbnail, v.created_at, m.name as model_name 
+    FROM videos v 
+    JOIN models m ON v.model_id = m.id 
+    WHERE v.slug = ?
+  `).bind(slug).first();
+  
   if (!video) return { title: 'Video Not Found' };
-  return { title: video.title, description: video.description.slice(0, 160) };
+  
+  return { 
+    title: `${video.title} by ${video.model_name}`, 
+    description: video.description.slice(0, 160),
+    openGraph: {
+      title: video.title,
+      description: video.description.slice(0, 160),
+      images: [{ url: video.thumbnail }],
+      type: 'video.other',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: video.title,
+      description: video.description.slice(0, 160),
+      images: [video.thumbnail],
+    },
+    alternates: {
+      canonical: `/video/${slug}`,
+    },
+  };
 }
 
 export default async function VideoPage({ params, searchParams }: Props) {
@@ -105,8 +130,34 @@ export default async function VideoPage({ params, searchParams }: Props) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.title,
+    description: video.description,
+    thumbnailUrl: video.thumbnail,
+    uploadDate: video.createdAt,
+    duration: `PT${Math.floor(video.duration / 60)}M${video.duration % 60}S`,
+    contentUrl: video.hoverPreviewUrl,
+    embedUrl: `https://freeof.qzz.io/video/${slug}`,
+    interactionStatistic: {
+      '@type': 'InteractionCounter',
+      interactionType: { '@type': 'WatchAction' },
+      userInteractionCount: video.views,
+    },
+    creator: {
+      '@type': 'Person',
+      name: video.model.name,
+      url: `https://freeof.qzz.io/models/${video.model.slug}`,
+    },
+  };
+
   return (
     <div className="max-w-7xl mx-auto space-y-10 animate-fade-in pb-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Breadcrumbs items={[
         { label: 'Videos', href: '/' },
         { label: video.model.name, href: `/models/${video.model.slug}` },

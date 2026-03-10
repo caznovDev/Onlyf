@@ -1,10 +1,19 @@
 import React from 'react';
+import { Metadata } from 'next';
 import { Users } from 'lucide-react';
 import Link from 'next/link';
 import Pagination from '../../components/Pagination';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
 export const runtime = 'edge';
+
+export const metadata: Metadata = {
+  title: 'Professional Creators & Models | FreeOF',
+  description: 'Browse our directory of professional video creators and models. Explore their profiles and exclusive cinematic content.',
+  alternates: {
+    canonical: '/models',
+  },
+};
 
 async function getModels(page: number, limit: number) {
   const db = process.env.DB as any;
