@@ -9,8 +9,7 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ['/api/', '/models/manage', '/upload'],
     },
     sitemap: [
-      `https://${DOMAIN}/sitemap.xml`,
-      `https://${DOMAIN}/sitemap_v2.xml`
+      `https://${DOMAIN}/sitemap-new.xml`
     ],
   };
 }

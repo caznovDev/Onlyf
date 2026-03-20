@@ -1,13 +1,13 @@
-import { MetadataRoute } from 'next';
-import { DOMAIN } from '../constants';
+import { NextResponse } from 'next/server';
+import { DOMAIN } from '../../constants';
 
 export const runtime = 'edge';
 
-export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+export async function GET() {
   const baseUrl = `https://${DOMAIN}`;
   
   // Static routes
-  const staticRoutes: MetadataRoute.Sitemap = [
+  const staticRoutes = [
     '',
     '/models',
     '/tags',
@@ -24,9 +24,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic routes from DB
   const db = (process.env as any).DB;
   
-  let videoRoutes: MetadataRoute.Sitemap = [];
-  let modelRoutes: MetadataRoute.Sitemap = [];
-  let tagRoutes: MetadataRoute.Sitemap = [];
+  let videoRoutes: any[] = [];
+  let modelRoutes: any[] = [];
+  let tagRoutes: any[] = [];
 
   if (db) {
     try {
@@ -61,5 +61,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
   }
 
-  return [...staticRoutes, ...videoRoutes, ...modelRoutes, ...tagRoutes];
+  const allRoutes = [...staticRoutes, ...videoRoutes, ...modelRoutes, ...tagRoutes];
+
+  const urlset = allRoutes.map(item => {
+    const date = item.lastModified instanceof Date ? item.lastModified : new Date(item.lastModified || Date.now());
+    const lastmod = `<lastmod>${date.toISOString().split('T')[0]}</lastmod>`;
+    const changefreq = item.changeFrequency ? `<changefreq>${item.changeFrequency}</changefreq>` : '';
+    const priority = item.priority !== undefined ? `<priority>${item.priority.toFixed(1)}</priority>` : '';
+    const encodedUrl = encodeURI(item.url);
+    const loc = encodedUrl.replace(/&/g, '&amp;').replace(/'/g, '&apos;').replace(/"/g, '&quot;').replace(/>/g, '&gt;').replace(/</g, '&lt;');
+    return `<url><loc>${loc}</loc>${lastmod}${changefreq}${priority}</url>`;
+  }).join('\n');
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlset}
+</urlset>`;
+
+  return new Response(xml, {
+    headers: {
+      'Content-Type': 'text/xml; charset=utf-8',
+      'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate',
+    },
+  });
 }
