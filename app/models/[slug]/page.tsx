@@ -119,7 +119,7 @@ export default async function ModelProfilePage({ params, searchParams }: Props) 
     name: model.name,
     description: model.bio,
     image: model.thumbnail,
-    url: `https://freeof.qzz.io/models/${model.slug}`,
+    url: `https://freeonlyfans.qzz.io/models/${model.slug}`,
     jobTitle: 'Professional Video Creator',
   };
 

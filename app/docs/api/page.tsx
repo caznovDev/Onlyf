@@ -12,7 +12,7 @@ export default function ApiDocsPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'videos' | 'creators'>('videos');
 
-  const videoRegisterCurl = `curl -X POST https://freeof.qzz.io/api/v1/upload \\
+  const videoRegisterCurl = `curl -X POST https://freeonlyfans.qzz.io/api/v1/upload \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "4K Cinematic Forest Walk",
@@ -27,7 +27,7 @@ export default function ApiDocsPage() {
     "tags": ["nature", "4k"]
   }'`;
 
-  const creatorCreateCurl = `curl -X POST https://freeof.qzz.io/api/v1/models \\
+  const creatorCreateCurl = `curl -X POST https://freeonlyfans.qzz.io/api/v1/models \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Jane Doe",

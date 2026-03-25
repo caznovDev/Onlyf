@@ -2,7 +2,7 @@
 import { Video, Model, Tag } from './types';
 
 export const SITE_NAME = 'FreeOF';
-export const DOMAIN = 'freeof.qzz.io';
+export const DOMAIN = 'freeonlyfans.qzz.io';
 
 export const MOCK_MODELS: Model[] = [
   {

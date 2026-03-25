@@ -139,7 +139,7 @@ export default async function VideoPage({ params, searchParams }: Props) {
     uploadDate: video.createdAt,
     duration: `PT${Math.floor(video.duration / 60)}M${video.duration % 60}S`,
     contentUrl: video.hoverPreviewUrl,
-    embedUrl: `https://freeof.qzz.io/video/${slug}`,
+    embedUrl: `https://freeonlyfans.qzz.io/video/${slug}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -148,7 +148,7 @@ export default async function VideoPage({ params, searchParams }: Props) {
     creator: {
       '@type': 'Person',
       name: video.model.name,
-      url: `https://freeof.qzz.io/models/${video.model.slug}`,
+      url: `https://freeonlyfans.qzz.io/models/${video.model.slug}`,
     },
   };
 

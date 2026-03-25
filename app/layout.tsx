@@ -14,14 +14,14 @@ export const metadata: Metadata = {
   authors: [{ name: 'FreeOF Team' }],
   creator: 'FreeOF',
   publisher: 'FreeOF',
-  metadataBase: new URL('https://freeof.qzz.io'),
+  metadataBase: new URL('https://freeonlyfans.qzz.io'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://freeof.qzz.io',
+    url: 'https://freeonlyfans.qzz.io',
     siteName: 'FreeOF',
     title: 'FreeOF - Professional Video Platform',
     description: 'High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.',
