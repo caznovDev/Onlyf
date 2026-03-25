@@ -72,13 +72,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const tag = await db?.prepare("SELECT name, description FROM tags WHERE slug = ?").bind(slug).first();
   if (!tag) return { title: 'Tag Not Found' };
   return {
-    title: `${tag.name} Videos - Browse by Category`,
-    description: tag.description || `Explore high-quality professional videos tagged with ${tag.name} on FreeOF.`,
+    title: `${tag.name} OnlyFans Leaked Videos`,
+    description: tag.description || `Explore high-quality leaked OnlyFans videos tagged with ${tag.name} on FreeOF.`,
     alternates: {
       canonical: `/tags/${slug}`,
     },
     openGraph: {
-      title: `${tag.name} Videos | FreeOF`,
+      title: `${tag.name} OnlyFans Leaked Videos | FreeOF`,
       description: tag.description,
       type: 'website',
     },

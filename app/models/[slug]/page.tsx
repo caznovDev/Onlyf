@@ -76,11 +76,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!model) return { title: 'Creator Not Found' };
   
   return {
-    title: `${model.name} - Creator Profile`,
-    description: model.bio,
+    title: `${model.name} OnlyFans Leaked Videos`,
+    description: `Explore ${model.name} leaked OnlyFans videos and exclusive content. Full 4K resolution and professional quality.`,
     openGraph: {
-      title: `${model.name} - Professional Creator`,
-      description: model.bio,
+      title: `${model.name} OnlyFans Leaked Videos`,
+      description: `Explore ${model.name} leaked OnlyFans videos and exclusive content.`,
       images: [{ url: model.thumbnail }],
       type: 'profile',
       username: model.slug,

@@ -8,8 +8,8 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: 'Professional Creators & Models | FreeOF',
-  description: 'Browse our directory of professional video creators and models. Explore their profiles and exclusive cinematic content.',
+  title: 'Leaked OnlyFans Models',
+  description: 'Browse our directory of leaked OnlyFans models. Explore their profiles and exclusive leaked cinematic content.',
   alternates: {
     canonical: '/models',
   },

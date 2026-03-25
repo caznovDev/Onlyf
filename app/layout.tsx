@@ -6,11 +6,11 @@ import Footer from '../components/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'FreeOF - Professional Video Platform & Creator Hub',
+    default: 'Free OnlyFans Leaks - freeonlyfans.qzz.io',
     template: '%s | FreeOF'
   },
-  description: 'FreeOF is a high-quality cinematic video platform. Explore professional creator profiles, exclusive 4K videos, and trending content.',
-  keywords: ['video platform', 'cinematic videos', '4K content', 'creator hub', 'professional models', 'FreeOF'],
+  description: 'Free OnlyFans leaks and exclusive content. Explore professional creator profiles, exclusive 4K leaked videos, and trending OnlyFans content.',
+  keywords: ['onlyfans leaks', 'free onlyfans', 'leaked onlyfans', '4K content', 'creator hub', 'professional models', 'FreeOF'],
   authors: [{ name: 'FreeOF Team' }],
   creator: 'FreeOF',
   publisher: 'FreeOF',

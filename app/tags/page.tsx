@@ -7,8 +7,8 @@ import Breadcrumbs from '../../components/Breadcrumbs';
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
-  title: 'Browse Video Categories & Tags | FreeOF',
-  description: 'Explore professional videos by category and tag. Find exactly what you are looking for in our high-quality cinematic library.',
+  title: 'Leaked OnlyFans Categories & Tags',
+  description: 'Explore leaked OnlyFans videos by category and tag. Find exactly what you are looking for in our high-quality leaked library.',
   alternates: {
     canonical: '/tags',
   },

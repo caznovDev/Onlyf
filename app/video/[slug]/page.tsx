@@ -93,11 +93,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!video) return { title: 'Video Not Found' };
   
   return { 
-    title: `${video.title} by ${video.model_name}`, 
-    description: video.description.slice(0, 160),
+    title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`, 
+    description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
     openGraph: {
-      title: video.title,
-      description: video.description.slice(0, 160),
+      title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`,
+      description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
       images: [{ url: video.thumbnail }],
       type: 'video.other',
     },
