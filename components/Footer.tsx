@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Settings, Book } from 'lucide-react';
+import { Play } from 'lucide-react';
 import Link from 'next/link';
 import { SITE_NAME } from '../constants';
 
@@ -17,14 +17,8 @@ const Footer = () => {
           <p className="text-slate-500 text-sm max-w-md">The world's leading professional video platform. High-quality 4K cinematic content from the world's top creators.</p>
           
           <div className="flex items-center gap-4 mt-2">
-            <Link href="/models/manage" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
-              <Settings size={10} /> Model Registry
-            </Link>
-            <Link href="/upload" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
-              <Settings size={10} /> Video Studio
-            </Link>
-            <Link href="/docs/api" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
-              <Book size={10} /> API Docs
+            <Link href="/sitemap" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
+              Sitemap
             </Link>
           </div>
         </div>
