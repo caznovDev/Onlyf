@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Play, Search, Users, Menu, X, Tag } from 'lucide-react';
 import { SITE_NAME } from '../constants';
+import { API_BASE_URL } from '../lib/api';
 
 const Header = () => {
   const router = useRouter();
@@ -31,7 +32,7 @@ const Header = () => {
     }
     const delayDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`${API_BASE_URL}/api/v1/search?q=${encodeURIComponent(searchQuery)}`);
         if (res.ok) setSearchResults(await res.json());
       } catch (e) {}
     }, 300);

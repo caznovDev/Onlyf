@@ -6,6 +6,8 @@ import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import { notFound } from 'next/navigation';
 
+import { apiFetch } from '../../../lib/api';
+
 export const runtime = 'edge';
 
 type Props = {
@@ -14,36 +16,9 @@ type Props = {
 };
 
 async function getVideoData(slug: string, recPage: number, recLimit: number) {
-  const db = process.env.DB as any;
-  if (!db) return null;
-
   try {
-    const video = await db.prepare(`
-      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
-      FROM videos v 
-      JOIN models m ON v.model_id = m.id 
-      WHERE v.slug = ? AND v.is_published = 1
-    `).bind(slug).first();
-
-    if (!video) return null;
-
-    const { results: tags } = await db.prepare(`
-      SELECT t.* FROM tags t
-      JOIN video_tags vt ON t.id = vt.tag_id
-      WHERE vt.video_id = ?
-    `).bind(video.id).all();
-
-    const recOffset = (recPage - 1) * recLimit;
-    const { results: recVideos } = await db.prepare(`
-      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
-      FROM videos v
-      JOIN models m ON v.model_id = m.id
-      WHERE v.id != ? AND v.is_published = 1
-      ORDER BY RANDOM()
-      LIMIT ? OFFSET ?
-    `).bind(video.id, recLimit, recOffset).all();
-
-    const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE id != ? AND is_published = 1").bind(video.id).first();
+    const data = await apiFetch(`/api/v1/video/${slug}?rec_page=${recPage}&rec_limit=${recLimit}`);
+    const { video, recommendations, pagination } = data;
 
     const mapVideo = (v: any) => ({
       id: v.id,
@@ -70,10 +45,10 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
     return {
       video: {
         ...mapVideo(video),
-        tags: tags.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug }))
+        tags: video.tags.map((t: any) => ({ id: t.id, name: t.name, slug: t.slug }))
       },
-      recommendations: recVideos.map(mapVideo),
-      totalRecPages: Math.ceil((countResult?.total || 0) / recLimit)
+      recommendations: recommendations.map(mapVideo),
+      totalRecPages: pagination.totalPages
     };
   } catch (e) {
     return null;
@@ -82,35 +57,32 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const db = process.env.DB as any;
-  const video = await db?.prepare(`
-    SELECT v.title, v.description, v.thumbnail, v.created_at, m.name as model_name 
-    FROM videos v 
-    JOIN models m ON v.model_id = m.id 
-    WHERE v.slug = ?
-  `).bind(slug).first();
-  
-  if (!video) return { title: 'Video Not Found' };
-  
-  return { 
-    title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`, 
-    description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
-    openGraph: {
-      title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`,
+  try {
+    const data = await apiFetch(`/api/v1/video/${slug}`);
+    const { video } = data;
+    
+    return { 
+      title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`, 
       description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
-      images: [{ url: video.thumbnail }],
-      type: 'video.other',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: video.title,
-      description: video.description.slice(0, 160),
-      images: [video.thumbnail],
-    },
-    alternates: {
-      canonical: `/video/${slug}`,
-    },
-  };
+      openGraph: {
+        title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`,
+        description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
+        images: [{ url: video.thumbnail }],
+        type: 'video.other',
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: video.title,
+        description: video.description.slice(0, 160),
+        images: [video.thumbnail],
+      },
+      alternates: {
+        canonical: `/video/${slug}`,
+      },
+    };
+  } catch (e) {
+    return { title: 'Video Not Found' };
+  }
 }
 
 export default async function VideoPage({ params, searchParams }: Props) {

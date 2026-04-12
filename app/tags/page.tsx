@@ -4,6 +4,8 @@ import { Tag as TagIcon } from 'lucide-react';
 import Link from 'next/link';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
+import { apiFetch } from '../../lib/api';
+
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
@@ -15,24 +17,14 @@ export const metadata: Metadata = {
 };
 
 async function getTags() {
-  const db = process.env.DB as any;
-  if (!db) return [];
-
   try {
-    const { results } = await db.prepare(`
-      SELECT t.*, COUNT(vt.video_id) as video_count 
-      FROM tags t 
-      LEFT JOIN video_tags vt ON t.id = vt.tag_id 
-      GROUP BY t.id
-      ORDER BY video_count DESC
-    `).all();
-
-    return results.map((t: any) => ({
+    const data = await apiFetch('/api/v1/tags');
+    return data.tags.map((t: any) => ({
       id: t.id,
       name: t.name,
       slug: t.slug,
       description: t.description,
-      videoCount: t.video_count
+      videoCount: t.video_count || 0
     }));
   } catch (e) {
     return [];

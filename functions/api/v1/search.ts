@@ -30,9 +30,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       videos: videoResults.results,
       models: modelResults.results
     }), {
-      headers: { "Content-Type": "application/json" }
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: e.message }), { 
+      status: 500,
+      headers: { "Access-Control-Allow-Origin": "*" }
+    });
   }
 };

@@ -5,6 +5,8 @@ import VideoCard from '../components/VideoCard';
 import Pagination from '../components/Pagination';
 import Breadcrumbs from '../components/Breadcrumbs';
 
+import { apiFetch } from '../lib/api';
+
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
@@ -16,26 +18,11 @@ export const metadata: Metadata = {
 };
 
 async function getVideos(page: number, limit: number) {
-  const db = process.env.DB as any;
-  if (!db) return { videos: [], totalPages: 0 };
-
-  const offset = (page - 1) * limit;
-  
   try {
-    const { results } = await db.prepare(`
-      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
-      FROM videos v
-      LEFT JOIN models m ON v.model_id = m.id
-      WHERE v.is_published = 1
-      ORDER BY v.created_at DESC
-      LIMIT ? OFFSET ?
-    `).bind(limit, offset).all();
-
-    const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE is_published = 1").first();
-    const total = countResult?.total || 0;
-
-    // Map DB result to Video interface
-    const mappedVideos = results.map((v: any) => ({
+    const data = await apiFetch(`/api/v1/videos?page=${page}&limit=${limit}`);
+    
+    // Map API result to Video interface
+    const mappedVideos = data.videos.map((v: any) => ({
       id: v.id,
       title: v.title,
       slug: v.slug,
@@ -52,12 +39,12 @@ async function getVideos(page: number, limit: number) {
         slug: v.model_slug,
         thumbnail: v.model_thumbnail
       },
-      tags: [] // Tags would require a separate join or subquery for full accuracy
+      tags: []
     }));
 
     return { 
       videos: mappedVideos, 
-      totalPages: Math.ceil(total / limit) 
+      totalPages: data.pagination.totalPages 
     };
   } catch (e) {
     console.error(e);

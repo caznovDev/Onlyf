@@ -3,6 +3,8 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { Users, Video, Tag, Home } from 'lucide-react';
 
+import { apiFetch } from '../../lib/api';
+
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
@@ -14,18 +16,12 @@ export const metadata: Metadata = {
 };
 
 async function getSitemapData() {
-  const db = process.env.DB as any;
-  if (!db) return { models: [], videos: [], tags: [] };
-
   try {
-    const models = await db.prepare("SELECT name, slug FROM models ORDER BY name ASC").all();
-    const videos = await db.prepare("SELECT title, slug FROM videos WHERE is_published = 1 ORDER BY created_at DESC").all();
-    const tags = await db.prepare("SELECT name, slug FROM tags ORDER BY name ASC").all();
-
+    const data = await apiFetch('/api/v1/sitemap');
     return {
-      models: models.results || [],
-      videos: videos.results || [],
-      tags: tags.results || []
+      models: data.models || [],
+      videos: data.videos || [],
+      tags: data.tags || []
     };
   } catch (e) {
     console.error(e);

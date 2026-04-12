@@ -1,4 +1,4 @@
-// Fix: Define missing Cloudflare D1 and Pages types to resolve compilation errors
+
 type D1Database = any;
 type PagesFunction<T> = (context: any) => Promise<Response> | Response;
 
@@ -9,25 +9,22 @@ interface Env {
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { searchParams } = new URL(context.request.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "8");
+  const limit = parseInt(searchParams.get("limit") || "18");
   const offset = (page - 1) * limit;
   const { env } = context;
 
   try {
     const { results } = await env.DB.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug 
-       FROM videos v 
-       JOIN models m ON v.model_id = m.id 
-       WHERE v.is_published = 1 
-       ORDER BY v.created_at DESC 
+      `SELECT * FROM models 
+       ORDER BY name ASC 
        LIMIT ? OFFSET ?`
     ).bind(limit, offset).all();
 
-    const countResult = await env.DB.prepare("SELECT COUNT(*) as total FROM videos WHERE is_published = 1").first();
+    const countResult = await env.DB.prepare("SELECT COUNT(*) as total FROM models").first();
     const total = (countResult as any).total;
 
     return new Response(JSON.stringify({
-      videos: results,
+      models: results,
       pagination: {
         page,
         limit,
