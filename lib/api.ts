@@ -1,5 +1,5 @@
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://freeof-platform.pages.dev';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export async function apiFetch(path: string) {
   const url = `${API_BASE_URL}${path}`;

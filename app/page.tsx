@@ -81,8 +81,12 @@ export default async function HomePage({
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800">
-            <p className="text-slate-500">No videos found in the database. Please run the seed script.</p>
+          <div className="text-center py-20 bg-slate-900/50 rounded-3xl border border-slate-800 space-y-4">
+            <p className="text-slate-500">No videos found in the database.</p>
+            <div className="max-w-md mx-auto p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-200/70 leading-relaxed">
+              <p className="font-bold mb-1">Note for Preview Mode:</p>
+              <p>If you are viewing this in the AI Studio preview, it cannot connect to your live Cloudflare D1 database directly. Once you deploy to Cloudflare Pages, your videos will appear automatically.</p>
+            </div>
           </div>
         )}
 
