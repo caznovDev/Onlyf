@@ -1,9 +1,10 @@
 
 import { MetadataRoute } from 'next';
 import { API_BASE_URL } from '../lib/api';
+import { DOMAIN } from '../constants';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = API_BASE_URL;
+  const baseUrl = `https://${DOMAIN}`;
 
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/sitemap`, { next: { revalidate: 3600 } });

@@ -27,18 +27,33 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ).bind(`%${q}%`).all();
 
     return new Response(JSON.stringify({
-      videos: videoResults.results,
-      models: modelResults.results
+      videos: videoResults.results || [],
+      models: modelResults.results || []
     }), {
       headers: { 
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
       }
     });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { 
       status: 500,
-      headers: { "Access-Control-Allow-Origin": "*" }
+      headers: { 
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      }
     });
   }
+};
+
+export const onRequestOptions: PagesFunction<Env> = async () => {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 };

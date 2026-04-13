@@ -24,10 +24,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ).bind(limit, offset).all();
 
     const countResult = await env.DB.prepare("SELECT COUNT(*) as total FROM videos WHERE is_published = 1").first();
-    const total = (countResult as any).total;
+    const total = countResult ? (countResult as any).total : 0;
 
     return new Response(JSON.stringify({
-      videos: results,
+      videos: results || [],
       pagination: {
         page,
         limit,
@@ -37,13 +37,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     }), {
       headers: { 
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
       }
     });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { 
       status: 500,
-      headers: { "Access-Control-Allow-Origin": "*" }
+      headers: { 
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      }
     });
   }
+};
+
+export const onRequestOptions: PagesFunction<Env> = async () => {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 };

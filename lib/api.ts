@@ -1,15 +1,23 @@
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://freeonlyfans.qzz.io';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://freeof-platform.pages.dev';
 
 export async function apiFetch(path: string) {
   const url = `${API_BASE_URL}${path}`;
-  const res = await fetch(url, {
-    next: { revalidate: 3600 } // Cache for 1 hour
-  });
+  console.log(`Fetching from API: ${url}`);
   
-  if (!res.ok) {
-    throw new Error(`API fetch failed: ${res.statusText}`);
+  try {
+    const res = await fetch(url, {
+      next: { revalidate: 3600 } // Cache for 1 hour
+    });
+    
+    if (!res.ok) {
+      console.error(`API fetch failed for ${url}: ${res.status} ${res.statusText}`);
+      throw new Error(`API fetch failed: ${res.statusText}`);
+    }
+    
+    return res.json();
+  } catch (error) {
+    console.error(`Network error fetching from API ${url}:`, error);
+    throw error;
   }
-  
-  return res.json();
 }

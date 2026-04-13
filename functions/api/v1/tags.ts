@@ -15,17 +15,32 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     ).all();
 
     return new Response(JSON.stringify({
-      tags: results
+      tags: results || []
     }), {
       headers: { 
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
       }
     });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { 
       status: 500,
-      headers: { "Access-Control-Allow-Origin": "*" }
+      headers: { 
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      }
     });
   }
+};
+
+export const onRequestOptions: PagesFunction<Env> = async () => {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 };

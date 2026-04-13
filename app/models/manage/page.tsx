@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit2, Save, X, Globe, Camera, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import Breadcrumbs from '../../../components/Breadcrumbs';
+import { API_BASE_URL } from '../../../lib/api';
 
 export const runtime = 'edge';
 
@@ -26,8 +27,11 @@ export default function ManageModelsPage() {
   const fetchModels = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/v1/models');
-      if (res.ok) setModels(await res.json());
+      const res = await fetch(`${API_BASE_URL}/api/v1/models`);
+      if (res.ok) {
+        const data = await res.json();
+        setModels(data.models || []);
+      }
     } catch (e) {}
     setIsLoading(false);
   };
@@ -43,7 +47,7 @@ export default function ManageModelsPage() {
     setIsSaving(true);
     setStatus('idle');
     try {
-      const res = await fetch('/api/v1/models', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/models`, {
         method: id ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(id ? { ...formData, id } : formData)

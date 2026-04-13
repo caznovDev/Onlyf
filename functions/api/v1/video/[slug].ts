@@ -45,14 +45,14 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     `).bind(video.id, recLimit, recOffset).all();
 
     const countResult = await env.DB.prepare("SELECT COUNT(*) as total FROM videos WHERE id != ? AND is_published = 1").bind(video.id).first();
-    const total = (countResult as any).total;
+    const total = countResult ? (countResult as any).total : 0;
 
     return new Response(JSON.stringify({
       video: {
         ...video,
-        tags
+        tags: tags || []
       },
-      recommendations,
+      recommendations: recommendations || [],
       pagination: {
         page: recPage,
         limit: recLimit,
@@ -62,13 +62,28 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     }), {
       headers: { 
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
       }
     });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e.message }), { 
       status: 500,
-      headers: { "Access-Control-Allow-Origin": "*" }
+      headers: { 
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json"
+      }
     });
   }
+};
+
+export const onRequestOptions: PagesFunction<Env> = async () => {
+  return new Response(null, {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    }
+  });
 };
