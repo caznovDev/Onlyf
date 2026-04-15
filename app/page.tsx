@@ -21,8 +21,12 @@ async function getVideos(page: number, limit: number) {
   try {
     const data = await apiFetch(`/api/v1/videos?page=${page}&limit=${limit}`);
     
+    if (data.error) {
+      return { videos: [], totalPages: 0, error: data.error };
+    }
+
     // Map API result to Video interface
-    const mappedVideos = data.videos.map((v: any) => ({
+    const mappedVideos = (data.videos || []).map((v: any) => ({
       id: v.id,
       title: v.title,
       slug: v.slug,
@@ -35,20 +39,20 @@ async function getVideos(page: number, limit: number) {
       createdAt: v.created_at,
       model: {
         id: v.model_id,
-        name: v.model_name,
-        slug: v.model_slug,
-        thumbnail: v.model_thumbnail
+        name: v.model_name || 'Unknown Creator',
+        slug: v.model_slug || 'unknown',
+        thumbnail: v.model_thumbnail || ''
       },
       tags: []
     }));
 
     return { 
       videos: mappedVideos, 
-      totalPages: data.pagination.totalPages 
+      totalPages: data.pagination?.totalPages || 0 
     };
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
-    return { videos: [], totalPages: 0 };
+    return { videos: [], totalPages: 0, error: e.message };
   }
 }
 
@@ -61,7 +65,7 @@ export default async function HomePage({
   const page = parseInt(params.page || '1');
   const limit = 12;
   
-  const { videos, totalPages } = await getVideos(page, limit);
+  const { videos, totalPages, error } = await getVideos(page, limit);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -73,6 +77,13 @@ export default async function HomePage({
             <TrendingUp className="text-rose-500" /> Popular Videos
           </h2>
         </div>
+
+        {error && (
+          <div className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500">
+            <p className="font-bold mb-2">API Error:</p>
+            <p className="text-sm font-mono bg-black/20 p-3 rounded-lg">{error}</p>
+          </div>
+        )}
 
         {videos.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

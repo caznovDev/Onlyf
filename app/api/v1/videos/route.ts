@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
@@ -8,8 +9,13 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "12");
   const offset = (page - 1) * limit;
 
-  // @ts-ignore - DB is injected by Cloudflare
-  const db = process.env.DB;
+  let db: any;
+  try {
+    db = getRequestContext().env.DB;
+  } catch (e) {
+    // Fallback for local development or environments without getRequestContext
+    db = (process.env as any).DB;
+  }
 
   if (!db) {
     return NextResponse.json({ 

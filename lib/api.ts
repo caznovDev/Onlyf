@@ -1,4 +1,6 @@
 
+// When deploying to Netlify while the database is on Cloudflare, 
+// set NEXT_PUBLIC_API_URL to your Cloudflare Pages URL (e.g., https://freeof-platform.pages.dev)
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 export async function apiFetch(path: string) {

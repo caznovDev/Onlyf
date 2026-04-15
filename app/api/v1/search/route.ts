@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
@@ -10,8 +11,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ videos: [] });
   }
 
-  // @ts-ignore
-  const db = process.env.DB;
+  let db: any;
+  try {
+    db = getRequestContext().env.DB;
+  } catch (e) {
+    db = (process.env as any).DB;
+  }
 
   if (!db) {
     return NextResponse.json({ error: "Database connection not found" }, { status: 500 });

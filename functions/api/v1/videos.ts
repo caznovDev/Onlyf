@@ -15,9 +15,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
   try {
     const { results } = await env.DB.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug 
+      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
        FROM videos v 
-       JOIN models m ON v.model_id = m.id 
+       LEFT JOIN models m ON v.model_id = m.id 
        WHERE v.is_published = 1 
        ORDER BY v.created_at DESC 
        LIMIT ? OFFSET ?`

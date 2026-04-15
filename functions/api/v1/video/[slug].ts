@@ -18,7 +18,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const video = await env.DB.prepare(`
       SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
       FROM videos v 
-      JOIN models m ON v.model_id = m.id 
+      LEFT JOIN models m ON v.model_id = m.id 
       WHERE v.slug = ? AND v.is_published = 1
     `).bind(slug).first();
 
@@ -38,7 +38,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const { results: recommendations } = await env.DB.prepare(`
       SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
       FROM videos v
-      JOIN models m ON v.model_id = m.id
+      LEFT JOIN models m ON v.model_id = m.id
       WHERE v.id != ? AND v.is_published = 1
       ORDER BY RANDOM()
       LIMIT ? OFFSET ?
