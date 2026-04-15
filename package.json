@@ -1,6 +1,7 @@
 {
   "name": "freeof-platform",
   "version": "1.0.0",
+  "description": "Professional video platform optimized for Cloudflare Pages",
   "private": true,
   "type": "module",
   "scripts": {
