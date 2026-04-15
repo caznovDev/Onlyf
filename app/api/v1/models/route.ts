@@ -1,44 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "18");
-  const offset = (page - 1) * limit;
-
-  let db: any;
-  try {
-    db = (getRequestContext().env as any).DB;
-  } catch (e) {
-    db = (process.env as any).DB;
-  }
-
-  if (!db) {
-    return NextResponse.json({ error: "Database connection not found" }, { status: 500 });
-  }
+  const db: any = process.env.DB;
+  if (!db || typeof db === 'string') return NextResponse.json({ error: "DB not found" }, { status: 500 });
 
   try {
-    const { results } = await db.prepare(
-      `SELECT * FROM models 
-       ORDER BY name ASC 
-       LIMIT ? OFFSET ?`
-    ).bind(limit, offset).all();
+    const { results } = await db.prepare("SELECT * FROM models ORDER BY name ASC").all();
+    return NextResponse.json(results);
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
 
-    const countResult = await db.prepare("SELECT COUNT(*) as total FROM models").first();
-    const total = countResult ? (countResult as any).total : 0;
+export async function POST(request: NextRequest) {
+  const db: any = process.env.DB;
+  if (!db || typeof db === 'string') return NextResponse.json({ error: "DB not found" }, { status: 500 });
 
-    return NextResponse.json({
-      models: results || [],
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
-    });
+  try {
+    const body = await request.json();
+    const { name, bio, thumbnail, slug: customSlug } = body;
+
+    if (!name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+
+    const id = crypto.randomUUID();
+    const slug = customSlug || slugify(name);
+
+    await db.prepare(`
+      INSERT INTO models (id, name, slug, bio, thumbnail, videos_count)
+      VALUES (?, ?, ?, ?, ?, 0)
+    `).bind(id, name, slug, bio || '', thumbnail || '').run();
+
+    return NextResponse.json({ success: true, id, slug }, { status: 201 });
+  } catch (e: any) {
+    if (e.message.includes('UNIQUE')) {
+      return NextResponse.json({ error: "A creator with this slug already exists" }, { status: 409 });
+    }
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const db: any = process.env.DB;
+  if (!db || typeof db === 'string') return NextResponse.json({ error: "DB not found" }, { status: 500 });
+
+  try {
+    const body = await request.json();
+    const { id, name, bio, thumbnail, slug } = body;
+
+    if (!id) return NextResponse.json({ error: "Model ID is required" }, { status: 400 });
+
+    await db.prepare(`
+      UPDATE models 
+      SET name = COALESCE(?, name), 
+          bio = COALESCE(?, bio), 
+          thumbnail = COALESCE(?, thumbnail), 
+          slug = COALESCE(?, slug)
+      WHERE id = ?
+    `).bind(name, bio, thumbnail, slug, id).run();
+
+    return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

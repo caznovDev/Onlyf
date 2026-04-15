@@ -33,28 +33,3 @@ Add a `_redirects` file to the root of your project:
 
 ## Compliance
 Strictly 18+. All content creators must be verified through the platform's compliance system.
-
-## 🐍 Python Scripts (Data Processing & S3)
-
-We've included utility scripts for data processing and AWS S3 integration.
-
-### Setup
-1. Ensure you have Python 3 installed.
-2. Install dependencies:
-   ```bash
-   pip install -r scripts/requirements.txt
-   ```
-
-### Data Processing
-Processes `data/input.csv`, performs transformations, and saves to `data/output.csv`.
-```bash
-python3 scripts/process_data.py
-```
-
-### S3 Upload
-Uploads the processed data to your S3 bucket.
-1. Configure your AWS credentials in `.env`.
-2. Run the script:
-   ```bash
-   python3 scripts/s3_upload.py
-   ```

@@ -1,6 +1,0 @@
-id,name,email,signup_date,subscription_status
-1,John Doe,john@example.com,2023-01-15,active
-2,Jane Smith,jane@example.com,2023-02-20,inactive
-3,Bob Johnson,bob@example.com,2023-03-10,active
-4,Alice Brown,alice@example.com,2023-04-05,pending
-5,Charlie Davis,charlie@example.com,2023-05-12,active

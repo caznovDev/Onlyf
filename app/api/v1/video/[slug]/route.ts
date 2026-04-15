@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
@@ -8,26 +7,17 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
-  const { searchParams } = new URL(request.url);
-  const recLimit = parseInt(searchParams.get("rec_limit") || "8");
+  const db: any = process.env.DB;
 
-  let db: any;
-  try {
-    db = (getRequestContext().env as any).DB;
-  } catch (e) {
-    db = (process.env as any).DB;
-  }
-
-  if (!db) {
-    return NextResponse.json({ error: "Database connection not found" }, { status: 500 });
+  if (!db || typeof db === 'string') {
+    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
   }
 
   try {
-    // Get video details
     const video = await db.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail 
        FROM videos v 
-       LEFT JOIN models m ON v.model_id = m.id 
+       JOIN models m ON v.model_id = m.id 
        WHERE v.slug = ? AND v.is_published = 1`
     ).bind(slug).first();
 
@@ -35,28 +25,67 @@ export async function GET(
       return NextResponse.json({ error: "Video not found" }, { status: 404 });
     }
 
-    // Get tags
-    const { results: tags } = await db.prepare(
-      `SELECT t.* FROM tags t
-       JOIN video_tags vt ON t.id = vt.tag_id
-       WHERE vt.video_id = ?`
-    ).bind(video.id).all();
-
-    // Get recommendations (excluding current video)
-    const { results: recommendations } = await db.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
-       FROM videos v 
-       LEFT JOIN models m ON v.model_id = m.id 
-       WHERE v.id != ? AND v.is_published = 1 
-       ORDER BY RANDOM() 
-       LIMIT ?`
-    ).bind(video.id, recLimit).all();
-
-    return NextResponse.json({
-      video: { ...video, tags: tags || [] },
-      recommendations: recommendations || [],
-      pagination: { totalPages: 1 } // Simplified for recommendations
+    return NextResponse.json(video, {
+      headers: { "Cache-Control": "public, max-age=3600" }
     });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
+) {
+  const { slug } = await params;
+  const db: any = process.env.DB;
+
+  if (!db || typeof db === 'string') {
+    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
+  }
+
+  try {
+    const body = await request.json();
+    const { 
+      title, 
+      description, 
+      type, 
+      thumbnail, 
+      resolution, 
+      orientation, 
+      is_published,
+      duration 
+    } = body;
+
+    const result = await db.prepare(`
+      UPDATE videos 
+      SET 
+        title = COALESCE(?, title),
+        description = COALESCE(?, description),
+        type = COALESCE(?, type),
+        thumbnail = COALESCE(?, thumbnail),
+        resolution = COALESCE(?, resolution),
+        orientation = COALESCE(?, orientation),
+        is_published = COALESCE(?, is_published),
+        duration = COALESCE(?, duration)
+      WHERE slug = ?
+    `).bind(
+      title, 
+      description, 
+      type, 
+      thumbnail, 
+      resolution, 
+      orientation, 
+      is_published,
+      duration,
+      slug
+    ).run();
+
+    if (result.meta.changes === 0) {
+      return NextResponse.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Metadata synced to edge." });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

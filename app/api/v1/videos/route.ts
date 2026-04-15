@@ -1,45 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "12");
+  const limit = parseInt(searchParams.get("limit") || "8");
   const offset = (page - 1) * limit;
+  
+  // Fix: Cast process.env.DB to any to allow access to D1 methods like .prepare() and resolve type mismatch
+  const db: any = process.env.DB;
 
-  let db: any;
-  try {
-    db = (getRequestContext().env as any).DB;
-  } catch (e) {
-    // Fallback for local development or environments without getRequestContext
-    db = (process.env as any).DB;
-  }
-
-  if (!db) {
-    return NextResponse.json({ 
-      error: "Database connection not found. Ensure D1 is bound to 'DB' in Cloudflare settings.",
-      videos: [],
-      pagination: { total: 0, totalPages: 0 }
-    }, { status: 500 });
+  if (!db || typeof db === 'string') {
+    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
   }
 
   try {
     const { results } = await db.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      `SELECT v.*, m.name as model_name, m.slug as model_slug 
        FROM videos v 
-       LEFT JOIN models m ON v.model_id = m.id 
+       JOIN models m ON v.model_id = m.id 
        WHERE v.is_published = 1 
        ORDER BY v.created_at DESC 
        LIMIT ? OFFSET ?`
     ).bind(limit, offset).all();
 
     const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE is_published = 1").first();
-    const total = countResult ? (countResult as any).total : 0;
+    const total = countResult?.total || 0;
 
     return NextResponse.json({
-      videos: results || [],
+      videos: results,
       pagination: {
         page,
         limit,

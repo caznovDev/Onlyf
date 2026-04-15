@@ -5,8 +5,6 @@ import Link from 'next/link';
 import Pagination from '../../components/Pagination';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
-import { apiFetch } from '../../lib/api';
-
 export const runtime = 'edge';
 
 export const metadata: Metadata = {
@@ -18,10 +16,22 @@ export const metadata: Metadata = {
 };
 
 async function getModels(page: number, limit: number) {
-  try {
-    const data = await apiFetch(`/api/v1/models?page=${page}&limit=${limit}`);
+  const db = process.env.DB as any;
+  if (!db) return { models: [], totalPages: 0 };
 
-    const mappedModels = data.models.map((m: any) => ({
+  const offset = (page - 1) * limit;
+
+  try {
+    const { results } = await db.prepare(`
+      SELECT * FROM models 
+      ORDER BY name ASC 
+      LIMIT ? OFFSET ?
+    `).bind(limit, offset).all();
+
+    const countResult = await db.prepare("SELECT COUNT(*) as total FROM models").first();
+    const total = countResult?.total || 0;
+
+    const mappedModels = results.map((m: any) => ({
       id: m.id,
       name: m.name,
       slug: m.slug,
@@ -31,7 +41,7 @@ async function getModels(page: number, limit: number) {
 
     return { 
       models: mappedModels, 
-      totalPages: data.pagination.totalPages 
+      totalPages: Math.ceil(total / limit) 
     };
   } catch (e) {
     return { models: [], totalPages: 0 };

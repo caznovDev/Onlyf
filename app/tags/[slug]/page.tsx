@@ -6,8 +6,6 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 import { Tag as TagIcon, LayoutGrid } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-import { apiFetch } from '../../../lib/api';
-
 export const runtime = 'edge';
 
 type Props = {
@@ -16,11 +14,29 @@ type Props = {
 };
 
 async function getTagData(slug: string, page: number, limit: number) {
-  try {
-    const data = await apiFetch(`/api/v1/tags/${slug}?page=${page}&limit=${limit}`);
-    const { tag, videos, pagination } = data;
+  const db = process.env.DB as any;
+  if (!db) return null;
 
-    const mappedVideos = videos.map((v: any) => ({
+  try {
+    const tag = await db.prepare("SELECT * FROM tags WHERE slug = ?").bind(slug).first();
+    if (!tag) return null;
+
+    const offset = (page - 1) * limit;
+    const { results: videoResults } = await db.prepare(`
+      SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
+      FROM videos v
+      JOIN video_tags vt ON v.id = vt.video_id
+      JOIN models m ON v.model_id = m.id
+      WHERE vt.tag_id = ? AND v.is_published = 1
+      ORDER BY v.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(tag.id, limit, offset).all();
+
+    const countResult = await db.prepare(`
+      SELECT COUNT(*) as total FROM video_tags WHERE tag_id = ?
+    `).bind(tag.id).first();
+    
+    const mappedVideos = videoResults.map((v: any) => ({
       id: v.id,
       title: v.title,
       slug: v.slug,
@@ -43,7 +59,7 @@ async function getTagData(slug: string, page: number, limit: number) {
     return { 
       tag: { id: tag.id, name: tag.name, slug: tag.slug, description: tag.description }, 
       videos: mappedVideos, 
-      totalPages: pagination.totalPages 
+      totalPages: Math.ceil((countResult?.total || 0) / limit) 
     };
   } catch (e) {
     return null;
@@ -52,24 +68,21 @@ async function getTagData(slug: string, page: number, limit: number) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  try {
-    const data = await apiFetch(`/api/v1/tags/${slug}`);
-    const { tag } = data;
-    return {
-      title: `${tag.name} OnlyFans Leaked Videos`,
-      description: tag.description || `Explore high-quality leaked OnlyFans videos tagged with ${tag.name} on FreeOF.`,
-      alternates: {
-        canonical: `/tags/${slug}`,
-      },
-      openGraph: {
-        title: `${tag.name} OnlyFans Leaked Videos | FreeOF`,
-        description: tag.description,
-        type: 'website',
-      },
-    };
-  } catch (e) {
-    return { title: 'Tag Not Found' };
-  }
+  const db = process.env.DB as any;
+  const tag = await db?.prepare("SELECT name, description FROM tags WHERE slug = ?").bind(slug).first();
+  if (!tag) return { title: 'Tag Not Found' };
+  return {
+    title: `${tag.name} OnlyFans Leaked Videos`,
+    description: tag.description || `Explore high-quality leaked OnlyFans videos tagged with ${tag.name} on FreeOF.`,
+    alternates: {
+      canonical: `/tags/${slug}`,
+    },
+    openGraph: {
+      title: `${tag.name} OnlyFans Leaked Videos | FreeOF`,
+      description: tag.description,
+      type: 'website',
+    },
+  };
 }
 
 export default async function TagVideosPage({ params, searchParams }: Props) {

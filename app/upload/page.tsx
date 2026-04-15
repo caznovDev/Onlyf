@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 import { useRouter } from 'next/navigation';
-import { API_BASE_URL } from '../../lib/api';
 
 export const runtime = 'edge';
 
@@ -45,8 +44,8 @@ export default function UploadPage() {
   }, [formData.tagsInput]);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/models`).then(res => res.json()).then(data => {
-      setModels(data.models || []);
+    fetch('/api/v1/models').then(res => res.json()).then(data => {
+      setModels(Array.isArray(data) ? data : (data.results || []));
     });
   }, []);
 
@@ -56,7 +55,7 @@ export default function UploadPage() {
     setStatus('idle');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/upload`, {
+      const res = await fetch('/api/v1/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

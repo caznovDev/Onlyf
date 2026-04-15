@@ -6,8 +6,6 @@ import Breadcrumbs from '../../../components/Breadcrumbs';
 import { Users, Info } from 'lucide-react';
 import { notFound } from 'next/navigation';
 
-import { apiFetch } from '../../../lib/api';
-
 export const runtime = 'edge';
 
 type Props = {
@@ -16,11 +14,24 @@ type Props = {
 };
 
 async function getModelData(slug: string, page: number, limit: number) {
-  try {
-    const data = await apiFetch(`/api/v1/models/${slug}?page=${page}&limit=${limit}`);
-    const { model, videos, pagination } = data;
+  const db = process.env.DB as any;
+  if (!db) return null;
 
-    const mappedVideos = videos.map((v: any) => ({
+  try {
+    const model = await db.prepare("SELECT * FROM models WHERE slug = ?").bind(slug).first();
+    if (!model) return null;
+
+    const offset = (page - 1) * limit;
+    const { results: videoResults } = await db.prepare(`
+      SELECT v.* FROM videos v 
+      WHERE v.model_id = ? AND v.is_published = 1
+      ORDER BY v.created_at DESC
+      LIMIT ? OFFSET ?
+    `).bind(model.id, limit, offset).all();
+
+    const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE model_id = ? AND is_published = 1").bind(model.id).first();
+    
+    const mappedVideos = videoResults.map((v: any) => ({
       id: v.id,
       title: v.title,
       slug: v.slug,
@@ -50,7 +61,7 @@ async function getModelData(slug: string, page: number, limit: number) {
         videosCount: model.videos_count
       }, 
       videos: mappedVideos, 
-      totalPages: pagination.totalPages 
+      totalPages: Math.ceil((countResult?.total || 0) / limit) 
     };
   } catch (e) {
     return null;
@@ -59,33 +70,31 @@ async function getModelData(slug: string, page: number, limit: number) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  try {
-    const data = await apiFetch(`/api/v1/models/${slug}`);
-    const { model } = data;
-    
-    return {
+  const db = process.env.DB as any;
+  const model = await db?.prepare("SELECT name, bio, thumbnail FROM models WHERE slug = ?").bind(slug).first();
+  
+  if (!model) return { title: 'Creator Not Found' };
+  
+  return {
+    title: `${model.name} OnlyFans Leaked Videos`,
+    description: `Explore ${model.name} leaked OnlyFans videos and exclusive content. Full 4K resolution and professional quality.`,
+    openGraph: {
       title: `${model.name} OnlyFans Leaked Videos`,
-      description: `Explore ${model.name} leaked OnlyFans videos and exclusive content. Full 4K resolution and professional quality.`,
-      openGraph: {
-        title: `${model.name} OnlyFans Leaked Videos`,
-        description: `Explore ${model.name} leaked OnlyFans videos and exclusive content.`,
-        images: [{ url: model.thumbnail }],
-        type: 'profile',
-        username: model.slug,
-      },
-      twitter: {
-        card: 'summary',
-        title: model.name,
-        description: model.bio,
-        images: [model.thumbnail],
-      },
-      alternates: {
-        canonical: `/models/${slug}`,
-      },
-    };
-  } catch (e) {
-    return { title: 'Creator Not Found' };
-  }
+      description: `Explore ${model.name} leaked OnlyFans videos and exclusive content.`,
+      images: [{ url: model.thumbnail }],
+      type: 'profile',
+      username: model.slug,
+    },
+    twitter: {
+      card: 'summary',
+      title: model.name,
+      description: model.bio,
+      images: [model.thumbnail],
+    },
+    alternates: {
+      canonical: `/models/${slug}`,
+    },
+  };
 }
 
 export default async function ModelProfilePage({ params, searchParams }: Props) {

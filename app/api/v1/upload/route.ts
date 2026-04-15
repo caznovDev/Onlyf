@@ -1,77 +1,105 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getRequestContext } from '@cloudflare/next-on-pages';
 
 export const runtime = 'edge';
 
-export async function POST(request: NextRequest) {
-  let db: any;
-  try {
-    db = (getRequestContext().env as any).DB;
-  } catch (e) {
-    db = (process.env as any).DB;
-  }
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+}
 
-  if (!db) {
-    return NextResponse.json({ error: "Database connection not found" }, { status: 500 });
+export async function POST(request: NextRequest) {
+  const db: any = process.env.DB;
+
+  if (!db || typeof db === 'string') {
+    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
   }
 
   try {
     const body = await request.json();
     const { 
-      title, description, modelId, type, video_url, 
-      thumbnail_url, duration, resolution, orientation, tags 
+      title, 
+      description, 
+      modelId, 
+      type = 'normal', 
+      tags = [], 
+      video_url, 
+      thumbnail_url,
+      duration = 0,
+      resolution = '1080p',
+      orientation = 'landscape'
     } = body;
 
-    if (!title || !video_url || !modelId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!title || !modelId || !video_url) {
+      return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { status: 400 });
     }
 
-    const slug = title.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '') + '-' + Math.random().toString(36).substring(2, 7);
-    const videoId = crypto.randomUUID();
-
-    // 1. Get model internal ID from slug
-    const model = await db.prepare("SELECT id FROM models WHERE slug = ?").bind(modelId).first();
+    // Polymorphic lookup: Try ID first, then Slug
+    let model = await db.prepare("SELECT id FROM models WHERE id = ? OR slug = ?").bind(modelId, modelId).first();
+    
     if (!model) {
-      return NextResponse.json({ error: "Model not found" }, { status: 404 });
+      return NextResponse.json({ error: `Creator '${modelId}' not found.` }, { status: 404 });
     }
 
-    // 2. Insert video
-    await db.prepare(
-      `INSERT INTO videos (
-        id, title, slug, description, type, model_id, 
-        duration, views, thumbnail, hover_preview_url, 
-        resolution, orientation, is_published
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`
-    ).bind(
-      videoId, title, slug, description || '', type || 'normal', model.id,
-      duration || 0, 0, thumbnail_url || '', video_url,
-      resolution || '1080p', orientation || 'landscape'
+    const videoId = crypto.randomUUID();
+    const baseSlug = slugify(title);
+    const finalSlug = `${baseSlug}-${videoId.slice(0, 8)}`;
+
+    await db.prepare(`
+      INSERT INTO videos (
+        id, title, slug, description, type, model_id, duration, 
+        thumbnail, hover_preview_url, resolution, orientation, is_published
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      videoId,
+      title,
+      finalSlug,
+      description || '',
+      type,
+      model.id,
+      parseInt(duration.toString()) || 0,
+      thumbnail_url || '',
+      video_url,
+      resolution,
+      orientation,
+      1
     ).run();
 
-    // 3. Handle tags
-    if (tags && Array.isArray(tags)) {
+    // Update Creator Stats
+    await db.prepare("UPDATE models SET videos_count = (SELECT COUNT(*) FROM videos WHERE model_id = ?) WHERE id = ?")
+      .bind(model.id, model.id).run();
+
+    // Tagging
+    if (Array.isArray(tags) && tags.length > 0) {
       for (const tagName of tags) {
-        const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-        const tagId = crypto.randomUUID();
+        const tagSlug = slugify(tagName);
+        let tag = await db.prepare("SELECT id FROM tags WHERE slug = ?").bind(tagSlug).first();
         
-        // Insert tag if not exists
-        await db.prepare("INSERT OR IGNORE INTO tags (id, name, slug) VALUES (?, ?, ?)")
-          .bind(tagId, tagName, tagSlug).run();
-        
-        // Get tag ID (either new or existing)
-        const tag = await db.prepare("SELECT id FROM tags WHERE slug = ?").bind(tagSlug).first();
-        
-        if (tag) {
-          await db.prepare("INSERT OR IGNORE INTO video_tags (video_id, tag_id) VALUES (?, ?)")
-            .bind(videoId, tag.id).run();
+        if (!tag) {
+          const newTagId = crypto.randomUUID();
+          await db.prepare("INSERT INTO tags (id, name, slug) VALUES (?, ?, ?)")
+            .bind(newTagId, tagName, tagSlug)
+            .run();
+          tag = { id: newTagId };
         }
+
+        await db.prepare("INSERT OR IGNORE INTO video_tags (video_id, tag_id) VALUES (?, ?)")
+          .bind(videoId, tag.id)
+          .run();
       }
     }
 
-    // 4. Update model video count
-    await db.prepare("UPDATE models SET videos_count = videos_count + 1 WHERE id = ?").bind(model.id).run();
+    return NextResponse.json({ 
+      success: true, 
+      slug: finalSlug,
+      id: videoId
+    }, { status: 201 });
 
-    return NextResponse.json({ success: true, slug });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
