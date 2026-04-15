@@ -13,7 +13,7 @@ export async function GET(
 
   let db: any;
   try {
-    db = getRequestContext().env.DB;
+    db = (getRequestContext().env as any).DB;
   } catch (e) {
     db = (process.env as any).DB;
   }

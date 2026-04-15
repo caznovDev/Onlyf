@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   let db: any;
   try {
-    db = getRequestContext().env.DB;
+    db = (getRequestContext().env as any).DB;
   } catch (e) {
     db = (process.env as any).DB;
   }

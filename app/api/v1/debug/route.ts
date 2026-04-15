@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   let db: any;
   try {
-    db = getRequestContext().env.DB;
+    db = (getRequestContext().env as any).DB;
     if (db) {
       dbStatus = "connected";
       // Try to list tables to verify actual connection
