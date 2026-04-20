@@ -11,6 +11,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   const slug = params.slug as string;
 
   try {
+    // Increment views
+    await env.DB.prepare("UPDATE videos SET views = views + 1 WHERE slug = ? AND is_published = 1").bind(slug).run();
+
     const video = await env.DB.prepare(
       `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail 
        FROM videos v 

@@ -18,6 +18,9 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
   if (!db) return null;
 
   try {
+    // Increment views
+    await db.prepare(`UPDATE videos SET views = views + 1 WHERE slug = ? AND is_published = 1`).bind(slug).run();
+
     const video = await db.prepare(`
       SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail
       FROM videos v 
