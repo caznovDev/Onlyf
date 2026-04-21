@@ -112,7 +112,7 @@ Fetch videos associated with a specific tag (e.g., #exclusive, #4k).
 - **Accept:** `application/json`
 
 ## CORS
-The API runs on Cloudflare Pages Functions. Ensure your local development server or production domain is allowed if CORS headers are configured on the Cloudflare dashboard.
+CORS is explicitly enabled for **all origins**. You can connect to this API from any frontend (local or production) without receiving "Cross-Origin Request Blocked" errors. The API handles `OPTIONS` preflight requests automatically.
 
 ## Notes
 - **View Counts:** Calling the `/video/[slug]` endpoint automatically increments the view counter in the database.
