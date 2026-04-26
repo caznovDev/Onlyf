@@ -114,6 +114,33 @@ Fetch videos associated with a specific tag (e.g., #exclusive, #4k).
 ## CORS
 CORS is explicitly enabled for **all origins**. You can connect to this API from any frontend (local or production) without receiving "Cross-Origin Request Blocked" errors. The API handles `OPTIONS` preflight requests automatically.
 
+### Example Fetch (Javascript/Frontend)
+If you are experiencing a "fetch error" from Netlify or other platforms, ensure you are not sending credentials with `*` origin, and use a standard fetch block:
+
+```javascript
+const apiUrl = "https://ais-pre-hal4ejwgx4jqkk3c4lj2ef-175331373501.europe-west2.run.app/api/v1";
+
+try {
+  const response = await fetch(`${apiUrl}/videos?page=1`, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json"
+    },
+    // Important for origins with '*':
+    credentials: "omit" 
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  console.log(data);
+} catch (error) {
+  console.error("Fetch failed:", error);
+}
+```
+
 ## Notes
 - **View Counts:** Calling the `/video/[slug]` endpoint automatically increments the view counter in the database.
 - **Cache:** Details are cached for 1 hour (`max-age=3600`).
