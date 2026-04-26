@@ -1,18 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "8");
   const offset = (page - 1) * limit;
-  
-  // Fix: Cast process.env.DB to any to allow access to D1 methods like .prepare() and resolve type mismatch
-  const db: any = process.env.DB;
+  const db = (process.env as any).DB;
 
-  if (!db || typeof db === 'string') {
-    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
+  if (!db) {
+    return NextResponse.json({ error: 'Database not initialized' }, { status: 500 });
   }
 
   try {
@@ -26,7 +24,7 @@ export async function GET(request: NextRequest) {
     ).bind(limit, offset).all();
 
     const countResult = await db.prepare("SELECT COUNT(*) as total FROM videos WHERE is_published = 1").first();
-    const total = countResult?.total || 0;
+    const total = (countResult as any).total;
 
     return NextResponse.json({
       videos: results,
@@ -36,8 +34,24 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      }
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

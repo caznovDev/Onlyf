@@ -14,18 +14,12 @@ export async function GET(
   }
 
   try {
-    // Increment views
-    await db.prepare("UPDATE videos SET views = views + 1 WHERE slug = ? AND is_published = 1").bind(slug).run();
-
-    const video = await db.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail 
-       FROM videos v 
-       JOIN models m ON v.model_id = m.id 
-       WHERE v.slug = ? AND v.is_published = 1`
+    const tag = await db.prepare(
+      "SELECT * FROM tags WHERE slug = ?"
     ).bind(slug).first();
 
-    if (!video) {
-      return NextResponse.json({ error: "Video not found" }, { 
+    if (!tag) {
+      return NextResponse.json({ error: "Tag not found" }, { 
         status: 404,
         headers: {
           'Access-Control-Allow-Origin': '*',
@@ -33,10 +27,21 @@ export async function GET(
       });
     }
 
-    return NextResponse.json(video, {
-      headers: { 
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=3600"
+    const { results: videos } = await db.prepare(
+      `SELECT v.*, m.name as model_name, m.slug as model_slug
+       FROM videos v
+       JOIN video_tags vt ON v.id = vt.video_id
+       JOIN models m ON v.model_id = m.id
+       WHERE vt.tag_id = ? AND v.is_published = 1
+       ORDER BY v.created_at DESC`
+    ).bind(tag.id).all();
+
+    return NextResponse.json({
+      ...tag,
+      videos
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
       }
     });
   } catch (e: any) {

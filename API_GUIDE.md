@@ -3,8 +3,47 @@
 This guide provides the necessary information to connect to the FreeOF Platform API from an external frontend or application.
 
 ## Base URL
-All API requests should be made to:
+Use the following base URL for your API requests:
 `https://ais-pre-hal4ejwgx4jqkk3c4lj2ef-175331373501.europe-west2.run.app/api/v1`
+
+---
+
+## CORS & Connectivity
+CORS is explicitly enabled for **all origins** (`*`). 
+
+### Important Note for Fetch
+When fetching from a browser (from Netlify, Vercel, or Localhost), you should:
+1. Ensure your method is `GET`.
+2. Do **not** send credentials with the request if using `mode: 'cors'` with `*` origin.
+3. Handle preflight `OPTIONS` requests automatically (the API is configured to allow them).
+
+### Example Fetch (Reliable Pattern)
+```javascript
+const API_BASE = "https://ais-pre-hal4ejwgx4jqkk3c4lj2ef-175331373501.europe-west2.run.app/api/v1";
+
+async function fetchVideos(page = 1) {
+  try {
+    const response = await fetch(`${API_BASE}/videos?page=${page}`, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      // Essential for resolving CORS issues with '*' origins
+      credentials: "omit" 
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Fetch failed:", error);
+    return null;
+  }
+}
+```
 
 ---
 

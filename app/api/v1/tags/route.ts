@@ -2,11 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "18");
-  const offset = (page - 1) * limit;
+export async function GET() {
   const db = (process.env as any).DB;
 
   if (!db) {
@@ -15,20 +11,11 @@ export async function GET(request: Request) {
 
   try {
     const { results } = await db.prepare(
-      `SELECT * FROM models ORDER BY name ASC LIMIT ? OFFSET ?`
-    ).bind(limit, offset).all();
-
-    const countResult = await db.prepare("SELECT COUNT(*) as total FROM models").first();
-    const total = (countResult as any).total;
+      "SELECT * FROM tags ORDER BY name ASC"
+    ).all();
 
     return NextResponse.json({
-      models: results,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit)
-      }
+      tags: results
     }, {
       headers: {
         'Access-Control-Allow-Origin': '*',

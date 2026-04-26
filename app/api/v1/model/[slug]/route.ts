@@ -14,29 +14,29 @@ export async function GET(
   }
 
   try {
-    // Increment views
-    await db.prepare("UPDATE videos SET views = views + 1 WHERE slug = ? AND is_published = 1").bind(slug).run();
-
-    const video = await db.prepare(
-      `SELECT v.*, m.name as model_name, m.slug as model_slug, m.thumbnail as model_thumbnail 
-       FROM videos v 
-       JOIN models m ON v.model_id = m.id 
-       WHERE v.slug = ? AND v.is_published = 1`
+    const model = await db.prepare(
+      "SELECT * FROM models WHERE slug = ?"
     ).bind(slug).first();
 
-    if (!video) {
-      return NextResponse.json({ error: "Video not found" }, { 
+    if (!model) {
+      return NextResponse.json({ error: "Model not found" }, { 
         status: 404,
         headers: {
           'Access-Control-Allow-Origin': '*',
-        }
+        } 
       });
     }
 
-    return NextResponse.json(video, {
-      headers: { 
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "public, max-age=3600"
+    const { results: videos } = await db.prepare(
+      "SELECT * FROM videos WHERE model_id = ? AND is_published = 1 ORDER BY created_at DESC"
+    ).bind(model.id).all();
+
+    return NextResponse.json({
+      ...model,
+      videos
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
       }
     });
   } catch (e: any) {
