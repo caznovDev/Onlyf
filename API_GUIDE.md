@@ -115,14 +115,56 @@ Search for videos and models.
 Fetch a paginated list of all creators/models.
 
 - **URL:** `/models`
-- **Method:** `GET`
-- **Query Parameters:**
+- **Method:** `GET` or `POST`
+- **GET Query Parameters:**
   - `page` (optional): Default `1`
   - `limit` (optional): Default `18`
+- **POST JSON Payload (Create Model):**
+  - `name`: String (required)
+  - `slug`: String (required, unique)
+  - `bio` (optional): String
+  - `thumbnail` (optional): String
 - **Example Request:**
   `GET /api/v1/models?page=1`
 
-### 5. Get Model Details & Videos
+### 5. Check if Model Exists
+Check if a model exists by slug.
+
+- **URL:** `/models/check`
+- **Method:** `GET`
+- **Query Parameters:**
+  - `slug`: The model slug to check
+- **Example Request:**
+  `GET /api/v1/models/check?slug=sophia-rose`
+- **Response Shape:**
+  ```json
+  {
+    "exists": true,
+    "id": "model-uuid",
+    "model": { ... }
+  }
+  ```
+
+### 6. Upload/Sync Video
+Upload or synchronize a new video. Automatically registers tags and updates creator statistics.
+
+- **URL:** `/upload`
+- **Method:** `POST`
+- **POST JSON Payload:**
+  - `title`: String (required)
+  - `description` (optional): String
+  - `modelId`: String (required - can be model UUID or slug)
+  - `video_url`: String (required)
+  - `thumbnail_url`: String (required)
+  - `duration` (optional): Integer
+  - `resolution` (optional): String (e.g. "1080p", "4K")
+  - `orientation` (optional): String ("landscape" or "portrait")
+  - `type` (optional): String (default: "normal")
+  - `tags` (optional): Array of strings
+- **Example Request:**
+  `POST /api/v1/upload`
+
+### 7. Get Model Details & Videos
 Fetch profile data for a specific model and their associated videos.
 
 - **URL:** `/model/[slug]`
@@ -130,13 +172,13 @@ Fetch profile data for a specific model and their associated videos.
 - **Example Request:**
   `GET /api/v1/model/sophia-rose`
 
-### 6. Get Tags (Listing)
+### 8. Get Tags (Listing)
 Fetch all available video categories/tags.
 
 - **URL:** `/tags`
 - **Method:** `GET`
 
-### 7. Get Tag Details & Videos
+### 9. Get Tag Details & Videos
 Fetch videos associated with a specific tag (e.g., #exclusive, #4k).
 
 - **URL:** `/tag/[slug]`

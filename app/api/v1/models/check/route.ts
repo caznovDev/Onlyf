@@ -13,7 +13,12 @@ export async function GET(request: NextRequest) {
   }
 
   if (!slug) {
-    return NextResponse.json({ error: "Slug parameter is required" }, { status: 400 });
+    return NextResponse.json({ error: "Slug parameter is required" }, { 
+      status: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
   }
 
   try {
@@ -22,7 +27,12 @@ export async function GET(request: NextRequest) {
     ).bind(slug).first();
 
     if (!model) {
-      return NextResponse.json({ exists: false }, { status: 200 });
+      return NextResponse.json({ exists: false }, { 
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        }
+      });
     }
 
     return NextResponse.json({ 
@@ -31,9 +41,28 @@ export async function GET(request: NextRequest) {
       model 
     }, { 
       status: 200,
-      headers: { "Cache-Control": "public, s-maxage=10" }
+      headers: { 
+        "Cache-Control": "public, s-maxage=10",
+        'Access-Control-Allow-Origin': '*',
+      }
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message }, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
   }
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
