@@ -5,3 +5,4 @@ Disallow: /models/manage
 Disallow: /upload
 
 Sitemap: https://freeonlyfans.qzz.io/sitemap.xml
+Sitemap: https://freeonlyfans.qzz.io/sitemap-v2.xml
