@@ -56,6 +56,15 @@ CREATE TABLE IF NOT EXISTS video_tags (
   FOREIGN KEY (tag_id) REFERENCES tags(id)
 );
 
+-- Performance Indexes for reducing D1 rows read and query times
+CREATE INDEX IF NOT EXISTS idx_videos_model_id ON videos(model_id);
+CREATE INDEX IF NOT EXISTS idx_videos_published_created ON videos(is_published, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_videos_slug ON videos(slug);
+CREATE INDEX IF NOT EXISTS idx_video_tags_tag_id ON video_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_video_tags_video_id ON video_tags(video_id);
+CREATE INDEX IF NOT EXISTS idx_models_slug ON models(slug);
+CREATE INDEX IF NOT EXISTS idx_tags_slug ON tags(slug);
+
 -- Seed lookup values
 INSERT OR IGNORE INTO resolutions (id, label) VALUES 
 ('4k', '4K Ultra HD'),

@@ -16,9 +16,6 @@ export const metadata: Metadata = {
   creator: 'FreeOF',
   publisher: 'FreeOF',
   metadataBase: new URL('https://freeonlyfans.qzz.io'),
-  alternates: {
-    canonical: '/',
-  },
   icons: {
     icon: '/favicon.ico',
   },

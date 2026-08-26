@@ -73,7 +73,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const db = process.env.DB as any;
   const model = await db?.prepare("SELECT name, bio, thumbnail FROM models WHERE slug = ?").bind(slug).first();
   
-  if (!model) return { title: 'Creator Not Found' };
+  if (!model) {
+    return { 
+      title: 'Creator Not Found',
+      alternates: {
+        canonical: `/models/${slug}`,
+      },
+      robots: {
+        index: false,
+        follow: false,
+      }
+    };
+  }
   
   return {
     title: `${model.name} OnlyFans Leaked Videos`,

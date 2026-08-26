@@ -70,7 +70,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
   const tag = await db?.prepare("SELECT name, description FROM tags WHERE slug = ?").bind(slug).first();
-  if (!tag) return { title: 'Tag Not Found' };
+  if (!tag) {
+    return { 
+      title: 'Tag Not Found',
+      alternates: {
+        canonical: `/tags/${slug}`,
+      },
+      robots: {
+        index: false,
+        follow: false,
+      }
+    };
+  }
   return {
     title: `${tag.name} OnlyFans Leaked Videos`,
     description: tag.description || `Explore high-quality leaked OnlyFans videos tagged with ${tag.name} on FreeOF.`,

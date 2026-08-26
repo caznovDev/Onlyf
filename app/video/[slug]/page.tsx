@@ -42,7 +42,7 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
       FROM videos v
       JOIN models m ON v.model_id = m.id
       WHERE v.id != ? AND v.is_published = 1
-      ORDER BY RANDOM()
+      ORDER BY v.created_at DESC
       LIMIT ? OFFSET ?
     `).bind(video.id, recLimit, recOffset).all();
 
@@ -93,7 +93,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     WHERE v.slug = ?
   `).bind(slug).first();
   
-  if (!video) return { title: 'Video Not Found' };
+  if (!video) {
+    return { 
+      title: 'Video Not Found',
+      alternates: {
+        canonical: `/video/${slug}`,
+      },
+      robots: {
+        index: false,
+        follow: false,
+      }
+    };
+  }
   
   return { 
     title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`, 
