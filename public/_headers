@@ -2,3 +2,7 @@
   Content-Type: application/xml
 /robots.txt
   Content-Type: text/plain
+/embed/*
+  Access-Control-Allow-Origin: *
+  Content-Security-Policy: frame-ancestors *
+  X-Frame-Options: ALLOWALL

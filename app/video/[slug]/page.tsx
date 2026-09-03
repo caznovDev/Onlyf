@@ -4,6 +4,7 @@ import { Eye, Clock, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
+import ShareButtons from '../../../components/ShareButtons';
 import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
@@ -12,6 +13,13 @@ type Props = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ rec_page?: string }>;
 };
+
+function toAbsoluteUrl(url?: string): string {
+  if (!url) return 'https://freeonlyfans.qzz.io/og-image.jpg';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  return `https://freeonlyfans.qzz.io${url.startsWith('/') ? '' : '/'}${url}`;
+}
 
 async function getVideoData(slug: string, recPage: number, recLimit: number) {
   const db = process.env.DB as any;
@@ -87,7 +95,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
   const video = await db?.prepare(`
-    SELECT v.title, v.description, v.thumbnail, v.created_at, m.name as model_name 
+    SELECT v.title, v.description, v.thumbnail, v.hover_preview_url, v.duration, v.orientation, v.resolution, v.created_at, m.name as model_name, m.slug as model_slug 
     FROM videos v 
     JOIN models m ON v.model_id = m.id 
     WHERE v.slug = ?
@@ -105,24 +113,71 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       }
     };
   }
+
+  const title = `${video.title} - ${video.model_name} OnlyFans Leaked Video`;
+  const description = video.description 
+    ? (video.description.length > 160 ? `${video.description.slice(0, 157)}...` : video.description)
+    : `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in ${video.resolution || '4K'} resolution.`;
+
+  const pageUrl = `https://freeonlyfans.qzz.io/video/${slug}`;
+  const embedUrl = `https://freeonlyfans.qzz.io/embed/video/${slug}`;
+  const absoluteThumbnail = toAbsoluteUrl(video.thumbnail);
+  const absoluteVideoUrl = video.hover_preview_url ? toAbsoluteUrl(video.hover_preview_url) : '';
+
+  const isPortrait = video.orientation === 'portrait';
+  const width = isPortrait ? 720 : 1280;
+  const height = isPortrait ? 1280 : 720;
   
   return { 
-    title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`, 
-    description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
-    openGraph: {
-      title: `${video.title} - ${video.model_name} OnlyFans Leaked Video`,
-      description: `Watch ${video.title} by ${video.model_name}. Leaked OnlyFans video in 4K resolution.`,
-      images: [{ url: video.thumbnail }],
-      type: 'video.other',
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: video.title,
-      description: video.description.slice(0, 160),
-      images: [video.thumbnail],
-    },
+    title, 
+    description,
     alternates: {
       canonical: `/video/${slug}`,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: 'FreeOF',
+      type: 'video.other',
+      images: [
+        { 
+          url: absoluteThumbnail,
+          width,
+          height,
+          alt: video.title,
+        }
+      ],
+      videos: absoluteVideoUrl ? [
+        {
+          url: absoluteVideoUrl,
+          secureUrl: absoluteVideoUrl,
+          type: 'video/mp4',
+          width,
+          height,
+        }
+      ] : undefined,
+    },
+    twitter: {
+      card: 'player',
+      site: '@FreeOF',
+      creator: '@FreeOF',
+      title,
+      description,
+      images: [absoluteThumbnail],
+      players: [
+        {
+          playerUrl: embedUrl,
+          streamUrl: absoluteVideoUrl,
+          width,
+          height,
+        }
+      ],
+    },
+    other: {
+      'twitter:player:stream:content_type': 'video/mp4',
+      ...(video.duration ? { 'og:video:duration': String(video.duration) } : {}),
+      ...(video.created_at ? { 'og:video:release_date': String(video.created_at) } : {}),
     },
   };
 }
@@ -149,11 +204,11 @@ export default async function VideoPage({ params, searchParams }: Props) {
     '@type': 'VideoObject',
     name: video.title,
     description: video.description,
-    thumbnailUrl: video.thumbnail,
+    thumbnailUrl: toAbsoluteUrl(video.thumbnail),
     uploadDate: video.createdAt,
     duration: `PT${Math.floor(video.duration / 60)}M${video.duration % 60}S`,
-    contentUrl: video.hoverPreviewUrl,
-    embedUrl: `https://freeonlyfans.qzz.io/video/${slug}`,
+    contentUrl: toAbsoluteUrl(video.hoverPreviewUrl),
+    embedUrl: `https://freeonlyfans.qzz.io/embed/video/${slug}`,
     interactionStatistic: {
       '@type': 'InteractionCounter',
       interactionType: { '@type': 'WatchAction' },
@@ -216,6 +271,10 @@ export default async function VideoPage({ params, searchParams }: Props) {
                   {video.orientation === 'portrait' ? <Smartphone size={14} /> : <Monitor size={14} />} 
                   {video.orientation}
                </div>
+            </div>
+
+            <div className="pt-2">
+              <ShareButtons slug={slug} title={video.title} modelName={video.model.name} />
             </div>
           </div>
 
