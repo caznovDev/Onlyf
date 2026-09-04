@@ -29,7 +29,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!video) {
     return {
       title: 'Video Not Found',
-      robots: { index: false, follow: false },
+      robots: {
+        index: false,
+        follow: false,
+        googleBot: {
+          index: false,
+          follow: false,
+        },
+      },
     };
   }
 
@@ -39,6 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     robots: {
       index: false,
       follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+        noimageindex: true,
+        noarchive: true,
+        nosnippet: true,
+      },
     },
     alternates: {
       canonical: `/video/${slug}`,

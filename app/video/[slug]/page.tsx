@@ -124,15 +124,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const absoluteThumbnail = toAbsoluteUrl(video.thumbnail);
   const absoluteVideoUrl = video.hover_preview_url ? toAbsoluteUrl(video.hover_preview_url) : '';
 
-  const isPortrait = video.orientation === 'portrait';
-  const width = isPortrait ? 720 : 1280;
-  const height = isPortrait ? 1280 : 720;
+  // Standard 16:9 high-res dimensions (1280x720) required for full-width large cards on Twitter/X and social previews
+  const cardWidth = 1280;
+  const cardHeight = 720;
   
   return { 
     title, 
     description,
     alternates: {
       canonical: `/video/${slug}`,
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: false,
+        follow: false,
+        noimageindex: true,
+        noarchive: true,
+        nosnippet: true,
+      },
     },
     openGraph: {
       title,
@@ -143,9 +154,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         { 
           url: absoluteThumbnail,
-          width,
-          height,
+          width: cardWidth,
+          height: cardHeight,
           alt: video.title,
+          type: 'image/jpeg',
         }
       ],
       videos: absoluteVideoUrl ? [
@@ -153,8 +165,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: absoluteVideoUrl,
           secureUrl: absoluteVideoUrl,
           type: 'video/mp4',
-          width,
-          height,
+          width: cardWidth,
+          height: cardHeight,
         }
       ] : undefined,
     },
@@ -164,17 +176,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       creator: '@FreeOF',
       title,
       description,
-      images: [absoluteThumbnail],
+      images: [
+        {
+          url: absoluteThumbnail,
+          width: cardWidth,
+          height: cardHeight,
+          alt: video.title,
+        }
+      ],
       players: [
         {
           playerUrl: embedUrl,
           streamUrl: absoluteVideoUrl,
-          width,
-          height,
+          width: cardWidth,
+          height: cardHeight,
         }
       ],
     },
     other: {
+      'twitter:image:width': String(cardWidth),
+      'twitter:image:height': String(cardHeight),
+      'twitter:player:width': String(cardWidth),
+      'twitter:player:height': String(cardHeight),
+      'twitter:player:stream': absoluteVideoUrl,
       'twitter:player:stream:content_type': 'video/mp4',
       ...(video.duration ? { 'og:video:duration': String(video.duration) } : {}),
       ...(video.created_at ? { 'og:video:release_date': String(video.created_at) } : {}),

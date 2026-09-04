@@ -45,15 +45,15 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
     googleBot: {
-      index: true,
-      follow: true,
+      index: false,
+      follow: false,
+      noimageindex: true,
+      noarchive: true,
+      nosnippet: true,
       'max-video-preview': -1,
-      'max-image-preview': 'large',
+      'max-image-preview': 'none',
       'max-snippet': -1,
     },
-  },
-  verification: {
-    google: 'O-vJtP-OhE8i9lTJN6dEdHovd_djuMjw4olCZL9dNbw',
   },
 };
 
