@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { Eye, Clock, Zap, Monitor, Smartphone, ShieldCheck, Info } from 'lucide-react';
 import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
@@ -114,6 +115,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  let isTwitterbot = false;
+  try {
+    const headersList = await headers();
+    const ua = (headersList.get('user-agent') || '').toLowerCase();
+    isTwitterbot = ua.includes('twitterbot');
+  } catch {
+    // ignore
+  }
+
   const title = `${video.title} - ${video.model_name} OnlyFans Leaked Video`;
   const description = video.description 
     ? (video.description.length > 160 ? `${video.description.slice(0, 157)}...` : video.description)
@@ -127,6 +137,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // Standard 16:9 high-res dimensions (1280x720) required for full-width large cards on Twitter/X and social previews
   const cardWidth = 1280;
   const cardHeight = 720;
+
+  // Zero-width space character (\u200B) prevents Twitter from falling back to OpenGraph or HTML title while leaving the card completely blank of text
+  const emptyCardText = '\u200B';
   
   return { 
     title, 
@@ -146,17 +159,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     },
     openGraph: {
-      title,
-      description,
+      title: isTwitterbot ? emptyCardText : title,
+      description: isTwitterbot ? emptyCardText : description,
       url: pageUrl,
-      siteName: 'FreeOF',
+      siteName: isTwitterbot ? '' : 'FreeOF',
       type: 'video.other',
       images: [
         { 
           url: absoluteThumbnail,
           width: cardWidth,
           height: cardHeight,
-          alt: video.title,
+          alt: '',
           type: 'image/jpeg',
         }
       ],
@@ -172,16 +185,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: 'player',
-      site: '@FreeOF',
-      creator: '@FreeOF',
-      title,
-      description,
+      title: emptyCardText,
+      description: emptyCardText,
       images: [
         {
           url: absoluteThumbnail,
           width: cardWidth,
           height: cardHeight,
-          alt: video.title,
+          alt: '',
         }
       ],
       players: [
@@ -194,6 +205,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ],
     },
     other: {
+      'twitter:title': emptyCardText,
+      'twitter:description': emptyCardText,
       'twitter:image:width': String(cardWidth),
       'twitter:image:height': String(cardHeight),
       'twitter:player:width': String(cardWidth),

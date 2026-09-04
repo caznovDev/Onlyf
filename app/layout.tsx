@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'FreeOF - Professional Video Platform',
-    description: 'High-quality cinematic video content platform. Explore professional models and exclusive 4K videos.',
+    title: '\u200B',
+    description: '\u200B',
     images: ['/og-image.jpg'],
   },
   robots: {
