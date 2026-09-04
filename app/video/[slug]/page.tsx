@@ -6,6 +6,7 @@ import Link from 'next/link';
 import VideoCard from '../../../components/VideoCard';
 import Breadcrumbs from '../../../components/Breadcrumbs';
 import ShareButtons from '../../../components/ShareButtons';
+import VideoPlayer from '../../../components/VideoPlayer';
 import { notFound } from 'next/navigation';
 
 export const runtime = 'edge';
@@ -184,7 +185,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ] : undefined,
     },
     twitter: {
-      card: 'player',
+      card: 'summary_large_image',
       title: emptyCardText,
       description: emptyCardText,
       images: [
@@ -195,24 +196,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: '',
         }
       ],
-      players: [
-        {
-          playerUrl: embedUrl,
-          streamUrl: absoluteVideoUrl,
-          width: cardWidth,
-          height: cardHeight,
-        }
-      ],
     },
     other: {
+      'twitter:card': 'summary_large_image',
       'twitter:title': emptyCardText,
       'twitter:description': emptyCardText,
+      'twitter:image': absoluteThumbnail,
+      'twitter:image:src': absoluteThumbnail,
       'twitter:image:width': String(cardWidth),
       'twitter:image:height': String(cardHeight),
-      'twitter:player:width': String(cardWidth),
-      'twitter:player:height': String(cardHeight),
-      'twitter:player:stream': absoluteVideoUrl,
-      'twitter:player:stream:content_type': 'video/mp4',
       ...(video.duration ? { 'og:video:duration': String(video.duration) } : {}),
       ...(video.created_at ? { 'og:video:release_date': String(video.created_at) } : {}),
     },
@@ -272,26 +264,14 @@ export default async function VideoPage({ params, searchParams }: Props) {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-8 space-y-8">
-          <div className={`bg-black rounded-[2rem] overflow-hidden border border-slate-800 shadow-2xl relative ring-1 ring-white/5 ${video.orientation === 'portrait' ? 'max-w-md mx-auto aspect-[9/16]' : 'aspect-video'}`}>
-            <video 
-              src={video.hoverPreviewUrl} 
-              controls 
-              className="w-full h-full object-contain"
-              poster={video.thumbnail}
-              preload="metadata"
-              playsInline
-            />
-            <div className="absolute top-6 left-6 flex gap-2">
-              <span className="bg-rose-500 text-white text-[10px] font-black px-3 py-1 rounded-full shadow-lg">
-                {video.resolution}
-              </span>
-              {video.type === 'onlyfans' && (
-                <span className="bg-black/80 backdrop-blur-md text-amber-500 text-[10px] font-black px-3 py-1 rounded-full border border-amber-500/30 flex items-center gap-1">
-                  <ShieldCheck size={10} /> EXCLUSIVE
-                </span>
-              )}
-            </div>
-          </div>
+          <VideoPlayer
+            src={video.hoverPreviewUrl}
+            poster={video.thumbnail}
+            title={video.title}
+            orientation={video.orientation}
+            resolution={video.resolution}
+            isExclusive={video.type === 'onlyfans'}
+          />
 
           <div className="space-y-6 px-2">
             <h1 className="text-3xl md:text-5xl font-black tracking-tighter leading-[1.1]">
@@ -311,7 +291,12 @@ export default async function VideoPage({ params, searchParams }: Props) {
             </div>
 
             <div className="pt-2">
-              <ShareButtons slug={slug} title={video.title} modelName={video.model.name} />
+              <ShareButtons 
+                slug={slug} 
+                title={video.title} 
+                modelName={video.model.name} 
+                videoDownloadUrl={video.hoverPreviewUrl}
+              />
             </div>
           </div>
 

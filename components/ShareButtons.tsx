@@ -1,18 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Share2, Check, Copy, Code, CheckCheck } from 'lucide-react';
+import { Share2, Check, Copy, Code, CheckCheck, Download, Sparkles, HelpCircle } from 'lucide-react';
 
 interface ShareButtonsProps {
   slug: string;
   title: string;
   modelName: string;
+  videoDownloadUrl?: string;
 }
 
-export default function ShareButtons({ slug, title, modelName }: ShareButtonsProps) {
+export default function ShareButtons({ slug, title, modelName, videoDownloadUrl }: ShareButtonsProps) {
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedEmbed, setCopiedEmbed] = useState(false);
   const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [showXHelp, setShowXHelp] = useState(false);
 
   const videoUrl = typeof window !== 'undefined' 
     ? `${window.location.origin}/video/${slug}` 
@@ -84,6 +86,21 @@ export default function ShareButtons({ slug, title, modelName }: ShareButtonsPro
         )}
       </button>
 
+      {/* Download Clip for X Native Autoplay */}
+      {videoDownloadUrl && (
+        <a
+          href={videoDownloadUrl}
+          download={`${slug}-clip.mp4`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 hover:text-rose-200 text-xs font-bold border border-rose-500/30 transition active:scale-95"
+          title="Download MP4 video clip to upload directly to X for native autoplay"
+        >
+          <Download size={14} className="text-rose-400" />
+          <span>Download Clip for X</span>
+        </a>
+      )}
+
       {/* Embed Button */}
       <button
         type="button"
@@ -93,6 +110,47 @@ export default function ShareButtons({ slug, title, modelName }: ShareButtonsPro
         <Code size={14} />
         <span>Embed</span>
       </button>
+
+      {/* Info Guide Button */}
+      <button
+        type="button"
+        onClick={() => setShowXHelp(!showXHelp)}
+        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-medium border border-slate-800/80 transition"
+        title="Learn how Twitter/X video autoplay works"
+      >
+        <HelpCircle size={13} />
+        <span>X Video Guide</span>
+      </button>
+
+      {/* X Autoplay Guide Modal */}
+      {showXHelp && (
+        <div className="w-full mt-3 p-4 rounded-2xl bg-slate-900/95 border border-slate-700/80 backdrop-blur-md space-y-2.5 text-xs text-slate-300">
+          <div className="flex items-center justify-between font-bold text-white">
+            <span className="flex items-center gap-2">
+              <Sparkles size={14} className="text-rose-400" />
+              How to get seamless Autoplay on X (Twitter)
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowXHelp(false)}
+              className="text-slate-400 hover:text-white text-xs"
+            >
+              Close
+            </button>
+          </div>
+          <p className="text-slate-300 leading-relaxed">
+            Twitter (X) <strong className="text-white">only autoplays native video files</strong> directly attached to a tweet. External web links never autoplay in the timeline by platform policy.
+          </p>
+          <div className="space-y-1.5 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+            <p className="text-rose-400 font-semibold">To get 100% native timeline autoplay:</p>
+            <ol className="list-decimal list-inside space-y-1 text-slate-400">
+              <li>Click <strong className="text-white">&quot;Download Clip for X&quot;</strong> to save the MP4 video clip.</li>
+              <li>Attach the downloaded MP4 directly into your tweet composer on X.</li>
+              <li>Paste your link <code className="text-rose-300">{videoUrl}</code> in the tweet text for viewers to watch the full video!</li>
+            </ol>
+          </div>
+        </div>
+      )}
 
       {/* Embed Modal / Popover */}
       {showEmbedModal && (

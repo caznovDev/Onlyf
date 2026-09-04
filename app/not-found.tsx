@@ -1,7 +1,8 @@
 import React from 'react';
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Home, AlertTriangle } from 'lucide-react';
+
+export const runtime = 'edge';
 
 export const metadata: Metadata = {
   title: '404 - Page Not Found | FreeOF',
@@ -22,12 +23,12 @@ export default function NotFound() {
       <p className="text-slate-400 max-w-md mb-8">
         The page or video you are looking for does not exist or has been removed.
       </p>
-      <Link
+      <a
         href="/"
         className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold transition"
       >
         <Home size={18} /> Back to Homepage
-      </Link>
+      </a>
     </div>
   );
 }
