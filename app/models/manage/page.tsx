@@ -26,8 +26,13 @@ export default function ManageModelsPage() {
   const fetchModels = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/v1/models');
-      if (res.ok) setModels(await res.json());
+      const res = await fetch('/api/v1/models', {
+        headers: { 'x-client-source': 'freeof-web' }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setModels(Array.isArray(data) ? data : (data.models || []));
+      }
     } catch (e) {}
     setIsLoading(false);
   };
@@ -45,7 +50,10 @@ export default function ManageModelsPage() {
     try {
       const res = await fetch('/api/v1/models', {
         method: id ? 'PATCH' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-client-source': 'freeof-web'
+        },
         body: JSON.stringify(id ? { ...formData, id } : formData)
       });
 

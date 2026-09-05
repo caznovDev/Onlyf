@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateApiAccess, createUnauthorizedResponse, getSecurityHeaders } from '../../../../lib/api-security';
 
 export const runtime = 'edge';
 
@@ -13,10 +14,18 @@ function slugify(text: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = validateApiAccess(request, { requireAdmin: true });
+  if (!auth.allowed) {
+    return createUnauthorizedResponse(auth, request);
+  }
+
   const db: any = process.env.DB;
 
   if (!db || typeof db === 'string') {
-    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
+    return NextResponse.json({ error: "Database binding not found" }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
   }
 
   try {
@@ -35,14 +44,20 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!title || !modelId || !video_url) {
-      return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { status: 400 });
+      return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { 
+        status: 400,
+        headers: getSecurityHeaders(request)
+      });
     }
 
     // Polymorphic lookup: Try ID first, then Slug
     let model = await db.prepare("SELECT id FROM models WHERE id = ? OR slug = ?").bind(modelId, modelId).first();
     
     if (!model) {
-      return NextResponse.json({ error: `Creator '${modelId}' not found.` }, { status: 404 });
+      return NextResponse.json({ error: `Creator '${modelId}' not found.` }, { 
+        status: 404,
+        headers: getSecurityHeaders(request)
+      });
     }
 
     const videoId = crypto.randomUUID();
@@ -100,28 +115,20 @@ export async function POST(request: NextRequest) {
       id: videoId
     }, { 
       status: 201,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
 
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { 
       status: 500, 
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   }
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+    headers: getSecurityHeaders(request),
   });
 }

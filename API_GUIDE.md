@@ -8,28 +8,34 @@ Use the following base URL for your API requests:
 
 ---
 
-## CORS & Connectivity
-CORS is explicitly enabled for **all origins** (`*`). 
+## Security & Allowed Calls
 
-### Important Note for Fetch
-When fetching from a browser (from Netlify, Vercel, or Localhost), you should:
-1. Ensure your method is `GET`.
-2. Do **not** send credentials with the request if using `mode: 'cors'` with `*` origin.
-3. Handle preflight `OPTIONS` requests automatically (the API is configured to allow them).
+All API routes are protected by a security gatekeeper and strict CORS policies. Only **allowed calls** receive data.
 
-### Example Fetch (Reliable Pattern)
+### Authorized Call Criteria
+A request is allowed if it meets **at least one** of the following conditions:
+1. **Valid API Key:** Passed via `x-api-key: <KEY>` or `Authorization: Bearer <KEY>`. Set via the `API_SECRET_KEY` environment variable.
+2. **First-Party Platform Request:** Originates from the FreeOF web app (`freeonlyfans.qzz.io`, Cloud Run origin, or local development).
+3. **Whitelisted External Origin:** Configured in the `ALLOWED_ORIGINS` environment variable.
+4. **Admin Key (Required for Write Operations):** Mutating requests (`POST /api/v1/upload`, `POST /api/v1/models`, `PATCH /api/v1/models`) require the admin key or first-party session.
+
+Calls that do not satisfy these conditions will be rejected with `401 Unauthorized` or `403 Forbidden`.
+
+---
+
+### Example Fetch (Authorized Pattern)
 ```javascript
-const API_BASE = "https://ais-pre-hal4ejwgx4jqkk3c4lj2ef-175331373501.europe-west2.run.app/api/v1";
+const API_BASE = "https://freeonlyfans.qzz.io/api/v1";
+const API_KEY = "YOUR_API_KEY"; // Configured in API_SECRET_KEY
 
 async function fetchVideos(page = 1) {
   try {
     const response = await fetch(`${API_BASE}/videos?page=${page}`, {
       method: "GET",
       headers: {
-        "Accept": "application/json"
-      },
-      // Essential for resolving CORS issues with '*' origins
-      credentials: "omit" 
+        "Accept": "application/json",
+        "x-api-key": API_KEY
+      }
     });
     
     if (!response.ok) {

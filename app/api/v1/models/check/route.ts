@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateApiAccess, createUnauthorizedResponse, getSecurityHeaders } from '../../../../../lib/api-security';
 
 export const runtime = 'edge';
 
 export async function GET(request: NextRequest) {
+  const auth = validateApiAccess(request);
+  if (!auth.allowed) {
+    return createUnauthorizedResponse(auth, request);
+  }
+
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug");
   
   const db: any = process.env.DB;
 
   if (!db || typeof db === 'string') {
-    return NextResponse.json({ error: "Database binding not found" }, { status: 500 });
+    return NextResponse.json({ error: "Database binding not found" }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
   }
 
   if (!slug) {
     return NextResponse.json({ error: "Slug parameter is required" }, { 
       status: 400,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   }
 
@@ -29,40 +36,32 @@ export async function GET(request: NextRequest) {
     if (!model) {
       return NextResponse.json({ exists: false }, { 
         status: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-        }
+        headers: getSecurityHeaders(request)
       });
     }
 
     return NextResponse.json({ 
-      exists: true,
+      exists: true, 
       id: model.id,
       model 
     }, { 
       status: 200,
       headers: { 
-        "Cache-Control": "public, s-maxage=10",
-        'Access-Control-Allow-Origin': '*',
+        ...getSecurityHeaders(request),
+        "Cache-Control": "public, s-maxage=10"
       }
     });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { 
       status: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   }
 }
 
-export async function OPTIONS() {
+export async function OPTIONS(request: NextRequest) {
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+    headers: getSecurityHeaders(request),
   });
 }

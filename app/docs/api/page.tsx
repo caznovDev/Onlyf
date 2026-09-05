@@ -14,6 +14,7 @@ export default function ApiDocsPage() {
 
   const videoRegisterCurl = `curl -X POST https://freeonlyfans.qzz.io/api/v1/upload \\
   -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
   -d '{
     "title": "4K Cinematic Forest Walk",
     "description": "High-fidelity drone footage...",
@@ -29,6 +30,7 @@ export default function ApiDocsPage() {
 
   const creatorCreateCurl = `curl -X POST https://freeonlyfans.qzz.io/api/v1/models \\
   -H "Content-Type: application/json" \\
+  -H "x-api-key: YOUR_API_KEY" \\
   -d '{
     "name": "Jane Doe",
     "slug": "jane-doe",

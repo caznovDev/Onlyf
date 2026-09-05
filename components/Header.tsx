@@ -31,7 +31,9 @@ const Header = () => {
     }
     const delayDebounce = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`/api/v1/search?q=${encodeURIComponent(searchQuery)}`, {
+          headers: { 'x-client-source': 'freeof-web' }
+        });
         if (res.ok) setSearchResults(await res.json());
       } catch (e) {}
     }, 300);

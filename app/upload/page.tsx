@@ -44,8 +44,10 @@ export default function UploadPage() {
   }, [formData.tagsInput]);
 
   useEffect(() => {
-    fetch('/api/v1/models').then(res => res.json()).then(data => {
-      setModels(Array.isArray(data) ? data : (data.results || []));
+    fetch('/api/v1/models', {
+      headers: { 'x-client-source': 'freeof-web' }
+    }).then(res => res.json()).then(data => {
+      setModels(Array.isArray(data) ? data : (data.models || data.results || []));
     });
   }, []);
 
@@ -57,7 +59,10 @@ export default function UploadPage() {
     try {
       const res = await fetch('/api/v1/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-client-source': 'freeof-web'
+        },
         body: JSON.stringify({
           ...formData,
           duration: durationSeconds,

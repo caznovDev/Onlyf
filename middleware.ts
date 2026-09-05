@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { validateApiAccess, createUnauthorizedResponse, getSecurityHeaders } from './lib/api-security';
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -30,6 +31,38 @@ export function middleware(request: NextRequest) {
         'X-Robots-Tag': 'noindex, nofollow, noarchive, nosnippet',
       },
     });
+  }
+
+  // API Call Gatekeeper: Ensure only allowed calls receive data
+  if (pathname.startsWith('/api/')) {
+    // Handle CORS preflight OPTIONS requests securely
+    if (request.method === 'OPTIONS') {
+      const secHeaders = getSecurityHeaders(request);
+      return new Response(null, {
+        status: 204,
+        headers: secHeaders,
+      });
+    }
+
+    // Mutating endpoints (e.g. upload, models creation) require write authorization
+    const isMutatingEndpoint = 
+      pathname.startsWith('/api/v1/upload') || 
+      (pathname.startsWith('/api/v1/models') && ['POST', 'PATCH', 'DELETE'].includes(request.method));
+
+    const authResult = validateApiAccess(request, { requireAdmin: isMutatingEndpoint });
+
+    if (!authResult.allowed) {
+      return createUnauthorizedResponse(authResult, request);
+    }
+
+    // Attach security headers to response
+    const response = NextResponse.next();
+    const secHeaders = getSecurityHeaders(request);
+    Object.entries(secHeaders).forEach(([key, val]) => {
+      response.headers.set(key, val);
+    });
+
+    return response;
   }
 
   return NextResponse.next();

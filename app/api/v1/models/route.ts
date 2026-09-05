@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { validateApiAccess, createUnauthorizedResponse, getSecurityHeaders } from '../../../../lib/api-security';
 
 export const runtime = 'edge';
 
 export async function GET(request: Request) {
+  const auth = validateApiAccess(request);
+  if (!auth.allowed) {
+    return createUnauthorizedResponse(auth, request);
+  }
+
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "18");
@@ -10,7 +16,10 @@ export async function GET(request: Request) {
   const db = (process.env as any).DB;
 
   if (!db) {
-    return NextResponse.json({ error: 'Database not initialized' }, { status: 500 });
+    return NextResponse.json({ error: 'Database not initialized' }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
   }
 
   try {
@@ -30,20 +39,29 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit)
       }
     }, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
   }
 }
 
 export async function POST(request: Request) {
+  const auth = validateApiAccess(request, { requireAdmin: true });
+  if (!auth.allowed) {
+    return createUnauthorizedResponse(auth, request);
+  }
+
   const db = (process.env as any).DB;
 
   if (!db) {
-    return NextResponse.json({ error: 'Database not initialized' }, { status: 500 });
+    return NextResponse.json({ error: 'Database not initialized' }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
   }
 
   try {
@@ -53,7 +71,7 @@ export async function POST(request: Request) {
     if (!name || !slug) {
       return NextResponse.json({ error: "Name and slug are required." }, { 
         status: 400,
-        headers: { 'Access-Control-Allow-Origin': '*' }
+        headers: getSecurityHeaders(request)
       });
     }
 
@@ -77,9 +95,7 @@ export async function POST(request: Request) {
       slug
     }, {
       status: 201,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   } catch (e: any) {
     if (e.message && (e.message.includes("UNIQUE") || e.message.includes("constraint"))) {
@@ -94,29 +110,66 @@ export async function POST(request: Request) {
             message: "Model already exists"
           }, {
             status: 200,
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-            }
+            headers: getSecurityHeaders(request)
           });
         }
       } catch (_) {}
     }
     return NextResponse.json({ error: e.message }, { 
       status: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-      }
+      headers: getSecurityHeaders(request)
     });
   }
 }
 
-export async function OPTIONS() {
+export async function PATCH(request: Request) {
+  const auth = validateApiAccess(request, { requireAdmin: true });
+  if (!auth.allowed) {
+    return createUnauthorizedResponse(auth, request);
+  }
+
+  const db = (process.env as any).DB;
+  if (!db) {
+    return NextResponse.json({ error: 'Database not initialized' }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { id, name, slug, bio, thumbnail } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Model ID is required for updates." }, { 
+        status: 400,
+        headers: getSecurityHeaders(request)
+      });
+    }
+
+    await db.prepare(`
+      UPDATE models 
+      SET name = COALESCE(?, name),
+          slug = COALESCE(?, slug),
+          bio = COALESCE(?, bio),
+          thumbnail = COALESCE(?, thumbnail)
+      WHERE id = ?
+    `).bind(name, slug, bio, thumbnail, id).run();
+
+    return NextResponse.json({ success: true, id }, { 
+      headers: getSecurityHeaders(request) 
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { 
+      status: 500,
+      headers: getSecurityHeaders(request)
+    });
+  }
+}
+
+export async function OPTIONS(request: Request) {
   return new Response(null, {
     status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+    headers: getSecurityHeaders(request),
   });
 }
