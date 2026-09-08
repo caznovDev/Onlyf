@@ -7,7 +7,8 @@ import {
   CheckCircle2, AlertCircle, Loader2, Search, Trash2, Edit3, 
   ExternalLink, Copy, Check, Plus, RefreshCw, SlidersHorizontal, 
   Film, X, ChevronLeft, ChevronRight, LogOut, ArrowRight, Clock,
-  Monitor, Smartphone
+  Monitor, Smartphone, Wrench, Download, AlertTriangle, CheckSquare, 
+  Square, PlaySquare, Maximize2, Image as ImageIcon
 } from 'lucide-react';
 import Breadcrumbs from '../../components/Breadcrumbs';
 
@@ -25,7 +26,7 @@ export default function AdminDashboardPage() {
   const [rememberKey, setRememberKey] = useState<boolean>(true);
 
   // Dashboard Active Tab
-  const [activeTab, setActiveTab] = useState<'overview' | 'videos' | 'creators' | 'api'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'videos' | 'creators' | 'tools' | 'api'>('overview');
 
   // Stats Data
   const [stats, setStats] = useState<any>(null);
@@ -37,10 +38,17 @@ export default function AdminDashboardPage() {
   const [videoSearch, setVideoSearch] = useState('');
   const [videoStatusFilter, setVideoStatusFilter] = useState<'all' | 'published' | 'unpublished'>('all');
   const [videoTypeFilter, setVideoTypeFilter] = useState<'all' | 'onlyfans' | 'normal'>('all');
+  const [filterMissingThumbnails, setFilterMissingThumbnails] = useState<boolean>(false);
   const [isVideosLoading, setIsVideosLoading] = useState(false);
   const [editingVideo, setEditingVideo] = useState<any | null>(null);
+  const [previewingVideo, setPreviewingVideo] = useState<any | null>(null);
   const [isUpdatingVideo, setIsUpdatingVideo] = useState(false);
   const [deletingVideoId, setDeletingVideoId] = useState<string | null>(null);
+
+  // Batch Video Operations State
+  const [selectedVideoIds, setSelectedVideoIds] = useState<string[]>([]);
+  const [isBatchProcessing, setIsBatchProcessing] = useState<boolean>(false);
+  const [showBatchDeleteModal, setShowBatchDeleteModal] = useState<boolean>(false);
 
   // Creators Tab State
   const [creators, setCreators] = useState<any[]>([]);
@@ -49,6 +57,13 @@ export default function AdminDashboardPage() {
   const [showAddCreatorModal, setShowAddCreatorModal] = useState(false);
   const [newCreatorData, setNewCreatorData] = useState({ name: '', slug: '', bio: '', thumbnail: '' });
   const [isSavingCreator, setIsSavingCreator] = useState(false);
+  const [editingCreator, setEditingCreator] = useState<any | null>(null);
+  const [isUpdatingCreator, setIsUpdatingCreator] = useState(false);
+  const [deletingCreatorId, setDeletingCreatorId] = useState<string | null>(null);
+  const [creatorDeleteCascadePrompt, setCreatorDeleteCascadePrompt] = useState<{ creator: any; videoCount: number } | null>(null);
+
+  // Tools & Maintenance State
+  const [isMaintenanceRunning, setIsMaintenanceRunning] = useState<string | null>(null);
 
   // Notification Toast
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -341,6 +356,228 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Batch Video Selection Handlers
+  const handleToggleSelectVideo = (id: string) => {
+    setSelectedVideoIds(prev => 
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const allPageIds = videos.map(v => v.id);
+  const isAllPageSelected = allPageIds.length > 0 && allPageIds.every(id => selectedVideoIds.includes(id));
+
+  const handleToggleSelectAllPage = () => {
+    if (isAllPageSelected) {
+      setSelectedVideoIds(prev => prev.filter(id => !allPageIds.includes(id)));
+    } else {
+      setSelectedVideoIds(prev => Array.from(new Set([...prev, ...allPageIds])));
+    }
+  };
+
+  // Batch Delete Execution
+  const handleExecuteBatchDelete = async () => {
+    if (selectedVideoIds.length === 0) return;
+    setIsBatchProcessing(true);
+    try {
+      const res = await fetch('/api/v1/admin/videos', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify({ ids: selectedVideoIds })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification('success', data.message || `Deleted ${selectedVideoIds.length} videos.`);
+        setSelectedVideoIds([]);
+        setShowBatchDeleteModal(false);
+        fetchVideos(videoPagination.page);
+        if (stats) fetchStats();
+      } else {
+        showNotification('error', data.error || 'Failed to delete selected videos.');
+      }
+    } catch {
+      showNotification('error', 'Network error during batch deletion.');
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  // Batch Status Update
+  const handleBatchUpdateStatus = async (isPublished: boolean) => {
+    if (selectedVideoIds.length === 0) return;
+    setIsBatchProcessing(true);
+    try {
+      const res = await fetch('/api/v1/admin/videos', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify({ ids: selectedVideoIds, is_published: isPublished ? 1 : 0 })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification('success', data.message || `Updated status for ${selectedVideoIds.length} videos.`);
+        setSelectedVideoIds([]);
+        fetchVideos(videoPagination.page);
+        if (stats) fetchStats();
+      } else {
+        showNotification('error', data.error || 'Failed to update videos status.');
+      }
+    } catch {
+      showNotification('error', 'Network error during batch status update.');
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  // Batch Type Update
+  const handleBatchUpdateType = async (type: 'onlyfans' | 'normal') => {
+    if (selectedVideoIds.length === 0) return;
+    setIsBatchProcessing(true);
+    try {
+      const res = await fetch('/api/v1/admin/videos', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify({ ids: selectedVideoIds, type })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification('success', data.message || `Set type to ${type} for ${selectedVideoIds.length} videos.`);
+        setSelectedVideoIds([]);
+        fetchVideos(videoPagination.page);
+        if (stats) fetchStats();
+      } else {
+        showNotification('error', data.error || 'Failed to update videos type.');
+      }
+    } catch {
+      showNotification('error', 'Network error during batch type update.');
+    } finally {
+      setIsBatchProcessing(false);
+    }
+  };
+
+  // Creator Edit & Save
+  const handleSaveCreatorEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCreator) return;
+    setIsUpdatingCreator(true);
+    try {
+      const res = await fetch('/api/v1/admin/models', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify(editingCreator)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification('success', `Creator "${editingCreator.name}" updated successfully.`);
+        setEditingCreator(null);
+        fetchCreators();
+      } else {
+        showNotification('error', data.error || 'Failed to update creator profile.');
+      }
+    } catch {
+      showNotification('error', 'Network error updating creator profile.');
+    } finally {
+      setIsUpdatingCreator(false);
+    }
+  };
+
+  // Creator Delete & Cascade Handling
+  const handleDeleteCreator = async (creator: any, cascade: boolean = false) => {
+    setDeletingCreatorId(creator.id);
+    try {
+      const res = await fetch(`/api/v1/admin/models?id=${creator.id}&cascade=${cascade ? 'true' : 'false'}`, {
+        method: 'DELETE',
+        headers: { 'x-api-key': adminKey }
+      });
+      const data = await res.json();
+      if (res.status === 409 && data.requiresCascade) {
+        setCreatorDeleteCascadePrompt({ creator, videoCount: data.videoCount });
+        return;
+      }
+      if (res.ok) {
+        showNotification('success', data.message || 'Creator deleted successfully.');
+        setCreatorDeleteCascadePrompt(null);
+        fetchCreators();
+        if (stats) fetchStats();
+      } else {
+        showNotification('error', data.error || 'Failed to delete creator.');
+      }
+    } catch {
+      showNotification('error', 'Network error deleting creator.');
+    } finally {
+      setDeletingCreatorId(null);
+    }
+  };
+
+  // Maintenance Actions
+  const handleRunMaintenanceAction = async (action: 'sync_counts' | 'clean_orphaned') => {
+    setIsMaintenanceRunning(action);
+    try {
+      const res = await fetch('/api/v1/admin/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify({ action })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification('success', data.message);
+        fetchCreators();
+        if (stats) fetchStats();
+      } else {
+        showNotification('error', data.error || 'Maintenance action failed.');
+      }
+    } catch {
+      showNotification('error', 'Network error executing maintenance action.');
+    } finally {
+      setIsMaintenanceRunning(null);
+    }
+  };
+
+  // Full Catalog Export as JSON
+  const handleExportCatalog = async () => {
+    setIsMaintenanceRunning('export');
+    try {
+      const res = await fetch('/api/v1/admin/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': adminKey
+        },
+        body: JSON.stringify({ action: 'export_catalog' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(data, null, 2))}`;
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute('href', jsonString);
+        downloadAnchor.setAttribute('download', `freeof-catalog-backup-${new Date().toISOString().slice(0, 10)}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showNotification('success', `Exported ${data.totalVideos} videos and ${data.totalCreators} creators!`);
+      } else {
+        showNotification('error', data.error || 'Failed to export catalog.');
+      }
+    } catch {
+      showNotification('error', 'Network error downloading catalog.');
+    } finally {
+      setIsMaintenanceRunning(null);
+    }
+  };
+
   // Run Test Key Tool
   const handleRunKeyTest = async () => {
     if (!testKeyInput.trim()) return;
@@ -565,6 +802,18 @@ export default function AdminDashboardPage() {
           <Users size={16} />
           <span>Creators</span>
           {stats && <span className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded-full">{stats.metrics?.totalModels || 0}</span>}
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tools')}
+          className={`flex items-center gap-2 px-5 py-3 text-sm font-bold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+            activeTab === 'tools'
+              ? 'border-rose-500 text-rose-400 bg-rose-500/5'
+              : 'border-transparent text-slate-400 hover:text-white hover:border-slate-700'
+          }`}
+        >
+          <Wrench size={16} />
+          <span>Tools & Maintenance</span>
         </button>
 
         <button
@@ -808,11 +1057,11 @@ export default function AdminDashboardPage() {
               <Search className="absolute left-3.5 top-2.5 text-slate-500" size={15} />
             </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
               <select
                 value={videoStatusFilter}
                 onChange={(e: any) => setVideoStatusFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-700 text-xs font-bold text-slate-300 rounded-xl py-2 px-3 focus:outline-none focus:border-rose-500"
+                className="bg-slate-950 border border-slate-700 text-xs font-bold text-slate-300 rounded-xl py-2 px-3 focus:outline-none focus:border-rose-500 cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="published">Published Only</option>
@@ -822,12 +1071,26 @@ export default function AdminDashboardPage() {
               <select
                 value={videoTypeFilter}
                 onChange={(e: any) => setVideoTypeFilter(e.target.value)}
-                className="bg-slate-950 border border-slate-700 text-xs font-bold text-slate-300 rounded-xl py-2 px-3 focus:outline-none focus:border-rose-500"
+                className="bg-slate-950 border border-slate-700 text-xs font-bold text-slate-300 rounded-xl py-2 px-3 focus:outline-none focus:border-rose-500 cursor-pointer"
               >
                 <option value="all">All Types</option>
                 <option value="onlyfans">OnlyFans</option>
                 <option value="normal">Normal</option>
               </select>
+
+              <button
+                type="button"
+                onClick={() => setFilterMissingThumbnails(!filterMissingThumbnails)}
+                className={`text-xs font-bold py-2 px-3 rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  filterMissingThumbnails 
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' 
+                    : 'bg-slate-950 border-slate-700 text-slate-400 hover:text-slate-200'
+                }`}
+                title="Filter videos missing thumbnail or twitter thumbnail"
+              >
+                <ImageIcon size={14} />
+                <span className="hidden sm:inline">Missing Covers</span>
+              </button>
 
               <button
                 onClick={() => fetchVideos(1)}
@@ -838,6 +1101,69 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </div>
+
+          {/* Sticky Batch Actions Bar when items are selected */}
+          {selectedVideoIds.length > 0 && (
+            <div className="bg-gradient-to-r from-rose-950/90 via-slate-900/95 to-slate-900/90 border-2 border-rose-500/50 rounded-2xl p-3.5 shadow-2xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center gap-3">
+                <span className="bg-rose-500 text-white font-black text-xs px-2.5 py-1 rounded-lg">
+                  {selectedVideoIds.length} Selected
+                </span>
+                <span className="text-xs text-slate-300 font-medium hidden sm:inline">
+                  Apply batch operations to selected catalog videos:
+                </span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => handleBatchUpdateStatus(true)}
+                  disabled={isBatchProcessing}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Publish all selected videos"
+                >
+                  <CheckCircle2 size={13} />
+                  <span>Publish All</span>
+                </button>
+
+                <button
+                  onClick={() => handleBatchUpdateStatus(false)}
+                  disabled={isBatchProcessing}
+                  className="bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title="Set all selected videos to draft"
+                >
+                  <Clock size={13} />
+                  <span>Set Draft</span>
+                </button>
+
+                <button
+                  onClick={() => handleBatchUpdateType('onlyfans')}
+                  disabled={isBatchProcessing}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold py-1.5 px-3 rounded-xl border border-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Set type to OnlyFans"
+                >
+                  Type: OnlyFans
+                </button>
+
+                <button
+                  onClick={() => setShowBatchDeleteModal(true)}
+                  disabled={isBatchProcessing}
+                  className="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold py-1.5 px-3 rounded-xl transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50 shadow-lg shadow-rose-950"
+                  title="Delete all selected videos"
+                >
+                  {isBatchProcessing ? <Loader2 className="animate-spin" size={13} /> : <Trash2 size={13} />}
+                  <span>Delete Selected</span>
+                </button>
+
+                <button
+                  onClick={() => setSelectedVideoIds([])}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Deselect All"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Videos Table */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
@@ -852,6 +1178,20 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-slate-800 bg-slate-950/50 text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                      <th className="py-3 px-4 w-10">
+                        <button
+                          type="button"
+                          onClick={handleToggleSelectAllPage}
+                          className="text-slate-400 hover:text-white cursor-pointer transition-colors"
+                          title={isAllPageSelected ? "Deselect page" : "Select all on page"}
+                        >
+                          {isAllPageSelected ? (
+                            <CheckSquare size={16} className="text-rose-500" />
+                          ) : (
+                            <Square size={16} />
+                          )}
+                        </button>
+                      </th>
                       <th className="py-3 px-4">Video</th>
                       <th className="py-3 px-4">Creator</th>
                       <th className="py-3 px-4">Format</th>
@@ -861,89 +1201,129 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60">
-                    {videos.map((video) => (
-                      <tr key={video.id} className="hover:bg-slate-800/20 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative w-16 h-10 rounded overflow-hidden bg-slate-950 shrink-0 border border-slate-800">
-                              <img src={video.thumbnail || '/placeholder.jpg'} alt="" className="w-full h-full object-cover" />
-                              {video.orientation === 'portrait' ? (
-                                <div className="absolute bottom-0.5 right-0.5 bg-black/70 p-0.5 rounded text-[8px] text-white">
-                                  <Smartphone size={10} />
+                    {videos
+                      .filter(v => {
+                        if (!filterMissingThumbnails) return true;
+                        return !v.thumbnail || !v.twitter_thumbnail || v.thumbnail === '/placeholder.jpg';
+                      })
+                      .map((video) => {
+                        const isSelected = selectedVideoIds.includes(video.id);
+                        return (
+                          <tr key={video.id} className={`transition-colors ${isSelected ? 'bg-rose-950/20' : 'hover:bg-slate-800/20'}`}>
+                            <td className="py-3 px-4">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSelectVideo(video.id)}
+                                className="text-slate-400 hover:text-white cursor-pointer transition-colors"
+                              >
+                                {isSelected ? (
+                                  <CheckSquare size={16} className="text-rose-500" />
+                                ) : (
+                                  <Square size={16} />
+                                )}
+                              </button>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                <div 
+                                  onClick={() => setPreviewingVideo(video)}
+                                  className="relative w-16 h-10 rounded overflow-hidden bg-slate-950 shrink-0 border border-slate-800 cursor-pointer group"
+                                  title="Click to preview & inspect video"
+                                >
+                                  <img src={video.thumbnail || '/placeholder.jpg'} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 flex items-center justify-center transition-colors">
+                                    <Play size={12} className="text-white fill-white opacity-80 group-hover:opacity-100" />
+                                  </div>
+                                  {video.orientation === 'portrait' ? (
+                                    <div className="absolute bottom-0.5 right-0.5 bg-black/70 p-0.5 rounded text-[8px] text-white">
+                                      <Smartphone size={10} />
+                                    </div>
+                                  ) : (
+                                    <div className="absolute bottom-0.5 right-0.5 bg-black/70 p-0.5 rounded text-[8px] text-white">
+                                      <Monitor size={10} />
+                                    </div>
+                                  )}
                                 </div>
-                              ) : (
-                                <div className="absolute bottom-0.5 right-0.5 bg-black/70 p-0.5 rounded text-[8px] text-white">
-                                  <Monitor size={10} />
+                                <div>
+                                  <button
+                                    onClick={() => setPreviewingVideo(video)}
+                                    className="font-bold text-white line-clamp-1 text-xs max-w-xs text-left hover:text-rose-400 transition-colors cursor-pointer"
+                                  >
+                                    {video.title}
+                                  </button>
+                                  <div className="text-[10px] text-slate-500 font-mono truncate max-w-xs">
+                                    /{video.slug}
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                            <div>
-                              <div className="font-bold text-white line-clamp-1 text-xs max-w-xs">{video.title}</div>
-                              <div className="text-[10px] text-slate-500 font-mono truncate max-w-xs">
-                                /{video.slug}
                               </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-300">
-                          {video.model_name ? (
-                            <Link href={`/models/${video.model_slug}`} target="_blank" className="hover:text-rose-400 transition-colors">
-                              {video.model_name}
-                            </Link>
-                          ) : '—'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-1.5 text-xs">
-                            <span className="font-bold text-slate-400">{video.resolution || '1080p'}</span>
-                            <span className="text-slate-600">•</span>
-                            <span className="text-[10px] text-slate-500 uppercase">{video.type}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4">
-                          <button
-                            onClick={() => handleTogglePublish(video)}
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                              video.is_published === 1 
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' 
-                                : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
-                            }`}
-                            title="Click to toggle publish status"
-                          >
-                            {video.is_published === 1 ? 'Live' : 'Draft'}
-                          </button>
-                        </td>
-                        <td className="py-3 px-4 text-xs font-mono text-slate-400">
-                          {(video.views || 0).toLocaleString()}
-                        </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <Link 
-                              href={`/video/${video.slug}`} 
-                              target="_blank"
-                              className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
-                              title="View Public Page"
-                            >
-                              <ExternalLink size={15} />
-                            </Link>
-                            <button
-                              onClick={() => setEditingVideo(video)}
-                              className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Quick Edit"
-                            >
-                              <Edit3 size={15} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteVideo(video.id)}
-                              disabled={deletingVideoId === video.id}
-                              className="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-                              title="Delete Video"
-                            >
-                              {deletingVideoId === video.id ? <Loader2 className="animate-spin" size={15} /> : <Trash2 size={15} />}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                            </td>
+                            <td className="py-3 px-4 text-xs text-slate-300">
+                              {video.model_name ? (
+                                <Link href={`/models/${video.model_slug}`} target="_blank" className="hover:text-rose-400 transition-colors">
+                                  {video.model_name}
+                                </Link>
+                              ) : '—'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-1.5 text-xs">
+                                <span className="font-bold text-slate-400">{video.resolution || '1080p'}</span>
+                                <span className="text-slate-600">•</span>
+                                <span className="text-[10px] text-slate-500 uppercase">{video.type}</span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <button
+                                onClick={() => handleTogglePublish(video)}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                                  video.is_published === 1 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30' 
+                                    : 'bg-amber-500/10 text-amber-400 border border-amber-500/30'
+                                }`}
+                                title="Click to toggle publish status"
+                              >
+                                {video.is_published === 1 ? 'Live' : 'Draft'}
+                              </button>
+                            </td>
+                            <td className="py-3 px-4 text-xs font-mono text-slate-400">
+                              {(video.views || 0).toLocaleString()}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setPreviewingVideo(video)}
+                                  className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title="Inspect & Preview Player"
+                                >
+                                  <PlaySquare size={15} />
+                                </button>
+                                <Link 
+                                  href={`/video/${video.slug}`} 
+                                  target="_blank"
+                                  className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+                                  title="View Public Page"
+                                >
+                                  <ExternalLink size={15} />
+                                </Link>
+                                <button
+                                  onClick={() => setEditingVideo(video)}
+                                  className="p-2 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title="Quick Edit"
+                                >
+                                  <Edit3 size={15} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteVideo(video.id)}
+                                  disabled={deletingVideoId === video.id}
+                                  className="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                                  title="Delete Video"
+                                >
+                                  {deletingVideoId === video.id ? <Loader2 className="animate-spin" size={15} /> : <Trash2 size={15} />}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -1045,7 +1425,7 @@ export default function AdminDashboardPage() {
                       <span className="font-bold text-slate-400">
                         {creator.actual_videos_count || creator.videos_count || 0} videos
                       </span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <Link 
                           href={`/models/${creator.slug}`} 
                           target="_blank"
@@ -1054,19 +1434,146 @@ export default function AdminDashboardPage() {
                         >
                           <ExternalLink size={14} />
                         </Link>
-                        <Link 
-                          href="/models/manage" 
-                          className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors"
-                          title="Full Creator Editor"
+                        <button 
+                          onClick={() => setEditingCreator(creator)}
+                          className="p-1.5 text-slate-400 hover:text-rose-400 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Edit Creator Details"
                         >
                           <Edit3 size={14} />
-                        </Link>
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCreator(creator)}
+                          disabled={deletingCreatorId === creator.id}
+                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Delete Creator Profile"
+                        >
+                          {deletingCreatorId === creator.id ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* TAB 4: TOOLS & MAINTENANCE */}
+      {/* ===================================================================== */}
+      {activeTab === 'tools' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Tool 1: Counters Recalibration */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                    <RefreshCw size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">Recalculate Video Counts</h3>
+                    <p className="text-slate-400 text-xs">Sync creator video counters with actual database rows</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mt-3">
+                  After batch deletions, Colab scraping imports, or direct SQL operations, creator <code className="text-rose-400 bg-slate-950 px-1 py-0.5 rounded">videos_count</code> columns might become desynchronized. This tool recalculates the real counts from the <code className="text-rose-400 bg-slate-950 px-1 py-0.5 rounded">videos</code> table.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleRunMaintenanceAction('sync_counts')}
+                disabled={isMaintenanceRunning !== null}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 px-4 rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isMaintenanceRunning === 'sync_counts' ? <Loader2 className="animate-spin" size={15} /> : <RefreshCw size={15} />}
+                <span>Run Count Synchronization</span>
+              </button>
+            </div>
+
+            {/* Tool 2: Database Integrity Cleanup */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                    <Wrench size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">Purge Orphaned Tag References</h3>
+                    <p className="text-slate-400 text-xs">Clean up stale relationship rows in video_tags</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mt-3">
+                  Deletes cross-reference rows in <code className="text-amber-400 bg-slate-950 px-1 py-0.5 rounded">video_tags</code> pointing to deleted video IDs or obsolete taxonomy tags to keep database queries optimized and indices small.
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleRunMaintenanceAction('clean_orphaned')}
+                disabled={isMaintenanceRunning !== null}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 px-4 rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isMaintenanceRunning === 'clean_orphaned' ? <Loader2 className="animate-spin" size={15} /> : <Wrench size={15} />}
+                <span>Clean Orphaned Relationships</span>
+              </button>
+            </div>
+
+            {/* Tool 3: Catalog Backup & JSON Export */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                    <Download size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">Export Catalog Snapshot</h3>
+                    <p className="text-slate-400 text-xs">Download full database (videos, creators, tags) as JSON</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mt-3">
+                  Instantly dump your current production catalog into a single structured <code className="text-emerald-400 bg-slate-950 px-1 py-0.5 rounded">.json</code> file. Ideal for offline backups, migration, or feeding external processing scripts.
+                </p>
+              </div>
+
+              <button
+                onClick={handleExportCatalog}
+                disabled={isMaintenanceRunning !== null}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer shadow-lg shadow-emerald-950 disabled:opacity-50"
+              >
+                {isMaintenanceRunning === 'export' ? <Loader2 className="animate-spin" size={15} /> : <Download size={15} />}
+                <span>Download JSON Backup</span>
+              </button>
+            </div>
+
+            {/* Tool 4: Diagnostic Quick Links */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between space-y-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+                    <ImageIcon size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-white text-base">Media Audit & Coverage</h3>
+                    <p className="text-slate-400 text-xs">Verify cover and thumbnail integrity</p>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed mt-3">
+                  Jump directly to video filtering with Missing Covers activated, or inspect Twitter Play Icon compliance to make sure every thumbnail matches the clean Twitter feed look.
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setFilterMissingThumbnails(true);
+                  setActiveTab('videos');
+                }}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3 px-4 rounded-xl border border-slate-700 flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <Search size={15} />
+                <span>Find Videos Missing Thumbnails</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1383,6 +1890,288 @@ API_HEADERS = {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: EDIT CREATOR */}
+      {/* ===================================================================== */}
+      {editingCreator && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <button
+              onClick={() => setEditingCreator(null)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X size={18} />
+            </button>
+
+            <h2 className="text-lg font-bold text-white uppercase tracking-tight flex items-center gap-2">
+              <Edit3 size={18} className="text-rose-500" /> Edit Creator Profile
+            </h2>
+
+            <form onSubmit={handleSaveCreatorEdit} className="space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Display Name</label>
+                <input
+                  type="text"
+                  value={editingCreator.name || ''}
+                  onChange={(e) => setEditingCreator({ ...editingCreator, name: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-rose-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Slug (URL identifier)</label>
+                <input
+                  type="text"
+                  value={editingCreator.slug || ''}
+                  onChange={(e) => setEditingCreator({ ...editingCreator, slug: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-rose-500 font-mono"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Avatar / Thumbnail URL</label>
+                <input
+                  type="url"
+                  value={editingCreator.thumbnail || ''}
+                  onChange={(e) => setEditingCreator({ ...editingCreator, thumbnail: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-rose-500 font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Bio / Profile Description</label>
+                <textarea
+                  rows={3}
+                  value={editingCreator.bio || ''}
+                  onChange={(e) => setEditingCreator({ ...editingCreator, bio: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingCreator(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingCreator}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  {isUpdatingCreator ? <Loader2 className="animate-spin" size={14} /> : <Check size={14} />}
+                  <span>Update Profile</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: BATCH DELETE CONFIRMATION */}
+      {/* ===================================================================== */}
+      {showBatchDeleteModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 relative">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 mx-auto">
+              <AlertTriangle size={24} />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-white uppercase tracking-tight">
+                Permanently Delete {selectedVideoIds.length} Videos?
+              </h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                This will delete <strong className="text-white">{selectedVideoIds.length} selected videos</strong>, their tag relations, and automatically recalculate creator video counters. This operation cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowBatchDeleteModal(false)}
+                disabled={isBatchProcessing}
+                className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteBatchDelete}
+                disabled={isBatchProcessing}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-rose-950 disabled:opacity-50"
+              >
+                {isBatchProcessing ? <Loader2 className="animate-spin" size={14} /> : <Trash2 size={14} />}
+                <span>Yes, Delete All</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: CREATOR CASCADE DELETE CONFIRMATION */}
+      {/* ===================================================================== */}
+      {creatorDeleteCascadePrompt && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4 relative">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 mx-auto">
+              <AlertTriangle size={24} />
+            </div>
+
+            <div className="text-center space-y-2">
+              <h2 className="text-lg font-bold text-white uppercase tracking-tight">
+                Associated Videos Detected
+              </h2>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Creator <strong className="text-white">&quot;{creatorDeleteCascadePrompt.creator.name}&quot;</strong> has{' '}
+                <span className="text-rose-400 font-bold">{creatorDeleteCascadePrompt.videoCount} associated video(s)</span>.
+              </p>
+              <p className="text-xs text-slate-400">
+                To prevent accidental loss of catalog content, creator deletion is blocked unless you explicitly authorize cascading deletion of all their videos.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setCreatorDeleteCascadePrompt(null)}
+                className="w-full sm:w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel & Keep
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteCreator(creatorDeleteCascadePrompt.creator, true)}
+                disabled={deletingCreatorId === creatorDeleteCascadePrompt.creator.id}
+                className="w-full sm:w-1/2 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-lg shadow-rose-950 disabled:opacity-50"
+              >
+                {deletingCreatorId === creatorDeleteCascadePrompt.creator.id ? (
+                  <Loader2 className="animate-spin" size={14} />
+                ) : (
+                  <Trash2 size={14} />
+                )}
+                <span>Delete With {creatorDeleteCascadePrompt.videoCount} Videos</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* MODAL: VIDEO INSPECT & PREVIEW */}
+      {/* ===================================================================== */}
+      {previewingVideo && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden relative">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <PlaySquare className="text-rose-500 shrink-0" size={18} />
+                <h2 className="text-sm font-bold text-white truncate">{previewingVideo.title}</h2>
+              </div>
+              <button
+                onClick={() => setPreviewingVideo(null)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Media Canvas */}
+            <div className="bg-black relative aspect-video flex items-center justify-center">
+              {previewingVideo.video_url ? (
+                <video
+                  src={previewingVideo.video_url}
+                  poster={previewingVideo.thumbnail || undefined}
+                  controls
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <div className="text-center p-6 space-y-2">
+                  <Film className="mx-auto text-slate-600" size={36} />
+                  <p className="text-slate-400 text-xs">No direct video URL stream configured for this entry.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Details and Thumbnails Comparison */}
+            <div className="p-5 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <ImageIcon size={12} /> Standard Poster
+                  </div>
+                  {previewingVideo.thumbnail ? (
+                    <img src={previewingVideo.thumbnail} alt="" className="w-full h-24 object-cover rounded-lg border border-slate-800" />
+                  ) : (
+                    <div className="w-full h-24 bg-slate-900 rounded-lg flex items-center justify-center text-slate-600 text-[10px]">
+                      Missing Thumbnail
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <ImageIcon size={12} /> Twitter Card Thumbnail
+                  </div>
+                  {previewingVideo.twitter_thumbnail ? (
+                    <img src={previewingVideo.twitter_thumbnail} alt="" className="w-full h-24 object-cover rounded-lg border border-slate-800" />
+                  ) : (
+                    <div className="w-full h-24 bg-slate-900 rounded-lg flex items-center justify-center text-slate-600 text-[10px]">
+                      Missing Twitter Cover
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase">Format</span>
+                  <span className="font-bold">{previewingVideo.resolution || '1080p'} ({previewingVideo.orientation || 'landscape'})</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase">Type</span>
+                  <span className="font-bold uppercase text-rose-400">{previewingVideo.type || 'onlyfans'}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block text-[9px] uppercase">Status</span>
+                  <span className="font-bold text-emerald-400">{previewingVideo.is_published === 1 ? 'Live' : 'Draft'}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center pt-2">
+                <Link
+                  href={`/video/${previewingVideo.slug}`}
+                  target="_blank"
+                  className="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 text-xs"
+                >
+                  <ExternalLink size={13} /> View Public Watch Page
+                </Link>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const v = previewingVideo;
+                      setPreviewingVideo(null);
+                      setEditingVideo(v);
+                    }}
+                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Edit3 size={13} /> Edit Metadata
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

@@ -105,6 +105,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { 
       id, 
+      ids,
       is_published, 
       title, 
       description, 
@@ -117,8 +118,53 @@ export async function PATCH(request: NextRequest) {
       duration 
     } = body;
 
+    // Handle BATCH update if ids array is provided
+    if (Array.isArray(ids) && ids.length > 0) {
+      let updatedCount = 0;
+      for (const vidId of ids) {
+        const updateParts: string[] = [];
+        const bindValues: any[] = [];
+
+        if (is_published !== undefined) {
+          updateParts.push("is_published = ?");
+          bindValues.push(is_published ? 1 : 0);
+        }
+        if (type !== undefined) {
+          updateParts.push("type = ?");
+          bindValues.push(type);
+        }
+        if (resolution !== undefined) {
+          updateParts.push("resolution = ?");
+          bindValues.push(resolution);
+        }
+        if (orientation !== undefined) {
+          updateParts.push("orientation = ?");
+          bindValues.push(orientation);
+        }
+
+        if (updateParts.length > 0) {
+          bindValues.push(vidId);
+          await db.prepare(`
+            UPDATE videos 
+            SET ${updateParts.join(", ")}
+            WHERE id = ?
+          `).bind(...bindValues).run();
+          updatedCount++;
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully updated ${updatedCount} videos in batch.`,
+        updatedCount
+      }, {
+        headers: getSecurityHeaders(request)
+      });
+    }
+
+    // Handle SINGLE video update
     if (!id) {
-      return NextResponse.json({ error: "Video ID is required" }, { 
+      return NextResponse.json({ error: "Video ID or ids array is required" }, { 
         status: 400,
         headers: getSecurityHeaders(request)
       });
@@ -203,35 +249,64 @@ export async function DELETE(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    let targetIds: string[] = [];
 
-    if (!id) {
-      return NextResponse.json({ error: "Video ID is required" }, { 
+    // Check query param single id
+    const singleId = searchParams.get("id");
+    if (singleId) {
+      targetIds.push(singleId);
+    }
+
+    // Check query param comma-separated ids: ?ids=id1,id2,id3
+    const idsParam = searchParams.get("ids");
+    if (idsParam) {
+      idsParam.split(',').map(s => s.trim()).filter(Boolean).forEach(id => {
+        if (!targetIds.includes(id)) targetIds.push(id);
+      });
+    }
+
+    // Check JSON body if ids provided
+    try {
+      const body = await request.clone().json();
+      if (Array.isArray(body.ids)) {
+        body.ids.forEach((id: string) => {
+          if (typeof id === 'string' && id.trim() && !targetIds.includes(id.trim())) {
+            targetIds.push(id.trim());
+          }
+        });
+      }
+    } catch {
+      // Body may not be JSON or empty
+    }
+
+    if (targetIds.length === 0) {
+      return NextResponse.json({ error: "At least one video ID is required for deletion." }, { 
         status: 400,
         headers: getSecurityHeaders(request)
       });
     }
 
-    const video = await db.prepare("SELECT model_id FROM videos WHERE id = ?").bind(id).first();
-    if (!video) {
-      return NextResponse.json({ error: "Video not found" }, { 
-        status: 404,
-        headers: getSecurityHeaders(request)
-      });
+    const affectedModelIds = new Set<string>();
+    let deletedCount = 0;
+
+    for (const id of targetIds) {
+      const video = await db.prepare("SELECT model_id FROM videos WHERE id = ?").bind(id).first();
+      if (video) {
+        if (video.model_id) affectedModelIds.add(video.model_id);
+
+        // Delete associated tags
+        try {
+          await db.prepare("DELETE FROM video_tags WHERE video_id = ?").bind(id).run();
+        } catch {}
+
+        // Delete the video record
+        await db.prepare("DELETE FROM videos WHERE id = ?").bind(id).run();
+        deletedCount++;
+      }
     }
 
-    const modelId = video.model_id;
-
-    // Delete tag links
-    try {
-      await db.prepare("DELETE FROM video_tags WHERE video_id = ?").bind(id).run();
-    } catch {}
-
-    // Delete the video
-    await db.prepare("DELETE FROM videos WHERE id = ?").bind(id).run();
-
-    // Update creator stats
-    if (modelId) {
+    // Recalculate and update video counts for affected creators
+    for (const modelId of affectedModelIds) {
       try {
         await db.prepare(`
           UPDATE models 
@@ -243,7 +318,8 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Video deleted successfully'
+      message: `Successfully deleted ${deletedCount} video${deletedCount === 1 ? '' : 's'}.`,
+      deletedCount
     }, {
       headers: getSecurityHeaders(request)
     });
