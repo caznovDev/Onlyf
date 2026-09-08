@@ -40,7 +40,10 @@ export async function GET(
       });
     }
 
-    return NextResponse.json(video, {
+    return NextResponse.json({
+      ...video,
+      twitter_thumbnail: (video as any).twitter_thumbnail || (video as any).thumbnail
+    }, {
       headers: { 
         ...getSecurityHeaders(request),
         "Cache-Control": "public, max-age=3600"

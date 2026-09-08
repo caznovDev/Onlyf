@@ -161,7 +161,8 @@ Upload or synchronize a new video. Automatically registers tags and updates crea
   - `description` (optional): String
   - `modelId`: String (required - can be model UUID or slug)
   - `video_url`: String (required)
-  - `thumbnail_url`: String (required)
+  - `thumbnail_url`: String (required - site poster thumbnail)
+  - `twitter_thumbnail_url` (optional): String (Twitter card meta tag thumbnail, e.g. 16:9 collage or custom preview. Defaults to `thumbnail_url` if omitted)
   - `duration` (optional): Integer
   - `resolution` (optional): String (e.g. "1080p", "4K")
   - `orientation` (optional): String ("landscape" or "portrait")

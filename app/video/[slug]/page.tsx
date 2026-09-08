@@ -67,6 +67,8 @@ async function getVideoData(slug: string, recPage: number, recLimit: number) {
       duration: v.duration,
       views: v.views,
       thumbnail: v.thumbnail,
+      twitterThumbnail: v.twitter_thumbnail || v.thumbnail,
+      twitter_thumbnail: v.twitter_thumbnail || v.thumbnail,
       hoverPreviewUrl: v.hover_preview_url,
       resolution: v.resolution,
       orientation: v.orientation,
@@ -97,7 +99,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const db = process.env.DB as any;
   const video = await db?.prepare(`
-    SELECT v.title, v.description, v.thumbnail, v.hover_preview_url, v.duration, v.orientation, v.resolution, v.created_at, m.name as model_name, m.slug as model_slug 
+    SELECT v.*, m.name as model_name, m.slug as model_slug 
     FROM videos v 
     JOIN models m ON v.model_id = m.id 
     WHERE v.slug = ?
@@ -132,7 +134,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const pageUrl = `https://freeonlyfans.qzz.io/video/${slug}`;
   const embedUrl = `https://freeonlyfans.qzz.io/embed/video/${slug}`;
-  const absoluteThumbnail = toAbsoluteUrl(video.thumbnail);
+  const absoluteSiteThumbnail = toAbsoluteUrl(video.thumbnail);
+  const twitterThumbnail = video.twitter_thumbnail || video.thumbnail;
+  const absoluteTwitterThumbnail = toAbsoluteUrl(twitterThumbnail);
   const absoluteVideoUrl = video.hover_preview_url ? toAbsoluteUrl(video.hover_preview_url) : '';
 
   // Standard 16:9 high-res dimensions (1280x720) required for full-width large cards on Twitter/X and social previews
@@ -167,7 +171,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'video.other',
       images: [
         { 
-          url: absoluteThumbnail,
+          url: absoluteTwitterThumbnail,
           width: cardWidth,
           height: cardHeight,
           alt: '',
@@ -190,7 +194,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: emptyCardText,
       images: [
         {
-          url: absoluteThumbnail,
+          url: absoluteTwitterThumbnail,
           width: cardWidth,
           height: cardHeight,
           alt: '',
@@ -201,8 +205,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       'twitter:card': 'summary_large_image',
       'twitter:title': emptyCardText,
       'twitter:description': emptyCardText,
-      'twitter:image': absoluteThumbnail,
-      'twitter:image:src': absoluteThumbnail,
+      'twitter:image': absoluteTwitterThumbnail,
+      'twitter:image:src': absoluteTwitterThumbnail,
       'twitter:image:width': String(cardWidth),
       'twitter:image:height': String(cardHeight),
       ...(video.duration ? { 'og:video:duration': String(video.duration) } : {}),

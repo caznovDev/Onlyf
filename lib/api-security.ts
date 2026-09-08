@@ -9,8 +9,12 @@ export interface ApiAuthResult {
   isAdmin: boolean;
 }
 
-// Default fallback key if not defined in environment
-const DEFAULT_API_KEY = 'freeof-secret-api-key-2026';
+// Default fallback keys if not defined in environment
+const DEFAULT_API_KEYS = ['freeof-secret-api-key-2026', 'freeof-secret-api-key-2025'];
+
+function cleanKey(val: string): string {
+  return val.trim().replace(/^["']|["']$/g, '');
+}
 
 /**
  * Retrieves valid API keys from environment variables
@@ -19,26 +23,39 @@ export function getConfiguredApiKeys(): { standardKeys: string[]; adminKeys: str
   const standardKeys = new Set<string>();
   const adminKeys = new Set<string>();
 
-  // Include configured standard keys
-  if (process.env.API_SECRET_KEY) {
-    process.env.API_SECRET_KEY.split(',').map(k => k.trim()).filter(Boolean).forEach(k => standardKeys.add(k));
-  }
-  if (process.env.API_KEY) {
-    process.env.API_KEY.split(',').map(k => k.trim()).filter(Boolean).forEach(k => standardKeys.add(k));
-  }
-
-  // Include configured admin keys
-  if (process.env.ADMIN_API_KEY) {
-    process.env.ADMIN_API_KEY.split(',').map(k => k.trim()).filter(Boolean).forEach(k => {
-      adminKeys.add(k);
-      standardKeys.add(k);
-    });
+  // Check admin keys first
+  const adminEnvVars = [process.env.ADMIN_API_KEY, process.env.ADMIN_KEY];
+  for (const envVal of adminEnvVars) {
+    if (envVal) {
+      envVal.split(',').map(cleanKey).filter(Boolean).forEach(k => {
+        adminKeys.add(k);
+        standardKeys.add(k);
+      });
+    }
   }
 
-  // If no keys are specified in environment, provide default development key
+  // Check standard keys
+  const standardEnvVars = [process.env.API_SECRET_KEY, process.env.API_KEY, process.env.SECRET_KEY];
+  for (const envVal of standardEnvVars) {
+    if (envVal) {
+      envVal.split(',').map(cleanKey).filter(Boolean).forEach(k => {
+        standardKeys.add(k);
+      });
+    }
+  }
+
+  // If standard keys were provided but NO admin key was explicitly configured,
+  // allow standard keys to perform admin duties so single-key setups work immediately.
+  if (adminKeys.size === 0 && standardKeys.size > 0) {
+    standardKeys.forEach(k => adminKeys.add(k));
+  }
+
+  // If no keys at all are specified in environment, provide default development keys
   if (standardKeys.size === 0) {
-    standardKeys.add(DEFAULT_API_KEY);
-    adminKeys.add(DEFAULT_API_KEY);
+    DEFAULT_API_KEYS.forEach(k => {
+      standardKeys.add(k);
+      adminKeys.add(k);
+    });
   }
 
   return {
@@ -116,7 +133,8 @@ export function validateApiAccess(
   }
   const queryApiKey = url.searchParams.get('api_key') || url.searchParams.get('apiKey');
 
-  const providedKey = apiKeyHeader || bearerToken || queryApiKey;
+  const rawProvidedKey = apiKeyHeader || bearerToken || queryApiKey;
+  const providedKey = rawProvidedKey ? cleanKey(rawProvidedKey) : null;
   const { standardKeys, adminKeys } = getConfiguredApiKeys();
 
   const isAdminKey = !!providedKey && adminKeys.includes(providedKey);

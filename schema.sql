@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS videos (
   duration INTEGER, -- total seconds
   views INTEGER DEFAULT 0,
   thumbnail TEXT,
+  twitter_thumbnail TEXT,
   hover_preview_url TEXT,
   resolution TEXT DEFAULT '1080p', -- Direct column
   orientation TEXT DEFAULT 'landscape', -- Direct column

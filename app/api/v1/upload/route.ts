@@ -38,10 +38,18 @@ export async function POST(request: NextRequest) {
       tags = [], 
       video_url, 
       thumbnail_url,
+      thumbnail,
+      site_thumbnail_url,
+      twitter_thumbnail_url,
+      twitter_thumbnail,
+      twitterThumbnail,
       duration = 0,
       resolution = '1080p',
       orientation = 'landscape'
     } = body;
+
+    const finalSiteThumbnail = thumbnail_url || thumbnail || site_thumbnail_url || '';
+    const finalTwitterThumbnail = twitter_thumbnail_url || twitter_thumbnail || twitterThumbnail || finalSiteThumbnail;
 
     if (!title || !modelId || !video_url) {
       return NextResponse.json({ error: "Title, Creator (modelId), and Video URL are required." }, { 
@@ -64,26 +72,81 @@ export async function POST(request: NextRequest) {
     const baseSlug = slugify(title);
     const finalSlug = `${baseSlug}-${videoId.slice(0, 8)}`;
 
-    await db.prepare(`
-      INSERT INTO videos (
-        id, title, slug, description, type, model_id, duration, 
-        thumbnail, hover_preview_url, resolution, orientation, is_published
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      videoId,
-      title,
-      finalSlug,
-      description || '',
-      type,
-      model.id,
-      parseInt(duration.toString()) || 0,
-      thumbnail_url || '',
-      video_url,
-      resolution,
-      orientation,
-      1
-    ).run();
+    try {
+      await db.prepare(`
+        INSERT INTO videos (
+          id, title, slug, description, type, model_id, duration, 
+          thumbnail, twitter_thumbnail, hover_preview_url, resolution, orientation, is_published
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        videoId,
+        title,
+        finalSlug,
+        description || '',
+        type,
+        model.id,
+        parseInt(duration.toString()) || 0,
+        finalSiteThumbnail,
+        finalTwitterThumbnail,
+        video_url,
+        resolution,
+        orientation,
+        1
+      ).run();
+    } catch (insertErr: any) {
+      // If table doesn't have twitter_thumbnail column yet, attempt to add it or fallback
+      if (insertErr.message && (insertErr.message.includes('twitter_thumbnail') || insertErr.message.includes('column'))) {
+        try {
+          await db.prepare("ALTER TABLE videos ADD COLUMN twitter_thumbnail TEXT").run();
+          await db.prepare(`
+            INSERT INTO videos (
+              id, title, slug, description, type, model_id, duration, 
+              thumbnail, twitter_thumbnail, hover_preview_url, resolution, orientation, is_published
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            videoId,
+            title,
+            finalSlug,
+            description || '',
+            type,
+            model.id,
+            parseInt(duration.toString()) || 0,
+            finalSiteThumbnail,
+            finalTwitterThumbnail,
+            video_url,
+            resolution,
+            orientation,
+            1
+          ).run();
+        } catch {
+          // If ALTER TABLE is not permitted or already run, fallback to standard insert
+          await db.prepare(`
+            INSERT INTO videos (
+              id, title, slug, description, type, model_id, duration, 
+              thumbnail, hover_preview_url, resolution, orientation, is_published
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            videoId,
+            title,
+            finalSlug,
+            description || '',
+            type,
+            model.id,
+            parseInt(duration.toString()) || 0,
+            finalSiteThumbnail,
+            video_url,
+            resolution,
+            orientation,
+            1
+          ).run();
+        }
+      } else {
+        throw insertErr;
+      }
+    }
 
     // Update Creator Stats
     await db.prepare("UPDATE models SET videos_count = (SELECT COUNT(*) FROM videos WHERE model_id = ?) WHERE id = ?")

@@ -28,6 +28,8 @@ export interface Video {
   duration: number; // in seconds
   views: number;
   thumbnail: string;
+  twitterThumbnail?: string;
+  twitter_thumbnail?: string;
   hoverPreviewUrl: string;
   createdAt: string;
   tags: Tag[];

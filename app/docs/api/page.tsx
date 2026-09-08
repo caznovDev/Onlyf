@@ -20,7 +20,8 @@ export default function ApiDocsPage() {
     "description": "High-fidelity drone footage...",
     "modelId": "riley-reid",
     "video_url": "https://cdn.example.com/vid.mp4",
-    "thumbnail_url": "https://cdn.example.com/thumb.jpg",
+    "thumbnail_url": "https://cdn.example.com/site_thumb.jpg",
+    "twitter_thumbnail_url": "https://cdn.example.com/twitter_cover_16x9.jpg",
     "duration": 630,
     "resolution": "4K",
     "orientation": "landscape",
@@ -77,6 +78,8 @@ export default function ApiDocsPage() {
                 <tbody className="text-slate-300 divide-y divide-slate-800/50">
                   <tr><td className="py-4 font-bold">modelId</td><td>string</td><td>UUID or slug of the creator.</td></tr>
                   <tr><td className="py-4 font-bold">video_url</td><td>url</td><td>Direct MP4 link.</td></tr>
+                  <tr><td className="py-4 font-bold">thumbnail_url</td><td>url</td><td>Site poster thumbnail (grid & player).</td></tr>
+                  <tr><td className="py-4 font-bold">twitter_thumbnail_url</td><td>url</td><td>Twitter card thumbnail (16:9 preview, optional).</td></tr>
                 </tbody>
               </table>
             </section>

@@ -93,9 +93,9 @@ const VideoCard: React.FC<VideoCardProps> = ({ video }) => {
           <Clock size={12} /> {formatDuration(video.duration)}
         </div>
 
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-2xl">
-            <Play size={24} fill="white" className="ml-1 text-white" />
+        <div className={`absolute inset-0 flex items-center justify-center transition-all duration-300 pointer-events-none ${showPreview ? 'opacity-0 scale-75' : 'opacity-85 group-hover:opacity-100'}`}>
+          <div className="w-12 h-12 bg-black/70 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 shadow-2xl transform group-hover:scale-110 transition-transform">
+            <Play size={22} fill="white" className="ml-0.5 text-white" />
           </div>
         </div>
       </Link>

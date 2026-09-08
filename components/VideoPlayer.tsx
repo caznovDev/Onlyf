@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { ShieldCheck, Volume2, VolumeX } from 'lucide-react';
+import { ShieldCheck, Volume2, VolumeX, Play } from 'lucide-react';
 
 interface VideoPlayerProps {
   src: string;
@@ -114,6 +114,26 @@ export default function VideoPlayer({
           </span>
         )}
       </div>
+
+      {/* Twitter-style Centered Play Button when paused or waiting to play */}
+      {!isPlaying && (
+        <button
+          type="button"
+          id="center-play-button"
+          onClick={() => {
+            const video = videoRef.current;
+            if (!video) return;
+            video.muted = false;
+            setIsMuted(false);
+            video.play();
+            setIsPlaying(true);
+          }}
+          className="absolute inset-0 m-auto w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-black/75 hover:bg-black/90 backdrop-blur-md border-2 border-white/30 hover:border-white/60 shadow-2xl flex items-center justify-center text-white transition-all transform hover:scale-110 active:scale-95 cursor-pointer z-20 group/play"
+          aria-label="Play video"
+        >
+          <Play size={32} fill="white" className="ml-1 text-white group-hover/play:scale-105 transition-transform" />
+        </button>
+      )}
 
       {/* Floating Unmute Button when playing muted */}
       {isPlaying && isMuted && (
