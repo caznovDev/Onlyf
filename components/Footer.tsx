@@ -20,6 +20,10 @@ const Footer = () => {
             <Link href="/sitemap" className="text-[10px] text-slate-600 hover:text-rose-500 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
               Sitemap
             </Link>
+            <span className="text-slate-800">•</span>
+            <Link href="/admin" className="text-[10px] text-slate-700 hover:text-slate-400 flex items-center gap-1 transition-colors uppercase tracking-widest font-bold">
+              Admin Portal
+            </Link>
           </div>
         </div>
         <div className="text-[10px] text-slate-600 space-y-2">

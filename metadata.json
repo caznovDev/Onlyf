@@ -1,6 +1,6 @@
 {
   "name": "FreeOF Platform",
-  "description": "An SEO-first, Cloudflare-ready professional video platform with immutable slugs, dark mode UI, and optimized performance.",
+  "description": "An SEO-first, Cloudflare-ready professional video platform with immutable slugs, dark mode UI, private admin dashboard, and optimized performance.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
