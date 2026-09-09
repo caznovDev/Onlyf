@@ -1654,21 +1654,52 @@ export default function AdminDashboardPage() {
           </div>
 
           {/* Quick Colab Sync Code Snippet */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-5">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-white uppercase tracking-tight flex items-center gap-2">
                 <Play size={18} className="text-rose-500" /> Colab Sync Ingestion Config
               </h2>
-              <button
-                onClick={() => handleCopy(`API_KEY = "${adminKey}"\nBASE_URL = "${window.location.origin}/api/v1"`, 'colabSnippet')}
-                className="text-xs font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
-              >
-                {copiedText === 'colabSnippet' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                <span>{copiedText === 'colabSnippet' ? 'Copied' : 'Copy Headers'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleCopy(`API_KEY = "${adminKey}"\nBASE_URL = "${window.location.origin}/api/v1"`, 'colabSnippet')}
+                  className="text-xs font-bold text-slate-400 hover:text-white transition-colors flex items-center gap-1 cursor-pointer bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg"
+                >
+                  {copiedText === 'colabSnippet' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  <span>{copiedText === 'colabSnippet' ? 'Copied' : 'Copy Headers'}</span>
+                </button>
+                <button
+                  onClick={() => handleCopy(`def make_vertical_twitter_thumbnail(img_path, out_path, target_w=720, target_h=1280):
+    from PIL import Image, ImageFilter, ImageDraw
+    img = Image.open(img_path).convert('RGB')
+    w, h = img.size
+    canvas = Image.new('RGB', (target_w, target_h), (10, 10, 15))
+    if w / h > target_w / target_h:
+        scale_bg = max(target_w / w, target_h / h)
+        bg = img.resize((int(w * scale_bg), int(h * scale_bg))).filter(ImageFilter.GaussianBlur(30))
+        canvas.paste(bg, ((target_w - bg.width) // 2, (target_h - bg.height) // 2))
+        scale_fg = target_w / w
+        fg = img.resize((target_w, int(h * scale_fg)))
+        canvas.paste(fg, (0, (target_h - fg.height) // 2))
+    else:
+        scale = max(target_w / w, target_h / h)
+        fg = img.resize((int(w * scale), int(h * scale)))
+        canvas.paste(fg, ((target_w - fg.width) // 2, (target_h - fg.height) // 2))
+    draw = ImageDraw.Draw(canvas, 'RGBA')
+    cx, cy, r = target_w // 2, target_h // 2, 48
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(0, 0, 0, 160), outline=(255, 255, 255, 70), width=2)
+    draw.polygon([(cx - 14, cy - 22), (cx - 14, cy + 22), (cx + 22, cy)], fill=(255, 255, 255, 240))
+    canvas.save(out_path, 'JPEG', quality=92)`, 'pythonSnippet')}
+                  className="text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors flex items-center gap-1 cursor-pointer bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 px-3 py-1.5 rounded-lg"
+                >
+                  {copiedText === 'pythonSnippet' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                  <span>{copiedText === 'pythonSnippet' ? 'Copied' : 'Copy Python 9:16 Function'}</span>
+                </button>
+              </div>
             </div>
 
-            <pre className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto">
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">1. Credentials & API Headers</span>
+              <pre className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto">
 {`# Colab Sync credentials pre-configured with active admin key:
 BASE_URL = "${typeof window !== 'undefined' ? window.location.origin : 'https://freeonlyfans.qzz.io'}/api/v1"
 API_KEY = "${adminKey}"
@@ -1678,7 +1709,40 @@ API_HEADERS = {
     "x-api-key": API_KEY,
     "x-client-source": "colab-sync"
 }`}
-            </pre>
+              </pre>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">2. Python Helper: Formato Vertical 9:16 (720x1280) com Play Icon</span>
+                <span className="text-[9px] text-rose-400 font-mono bg-rose-500/10 px-2 py-0.5 rounded">Twitter/X Timeline Format</span>
+              </div>
+              <pre className="bg-slate-950 border border-slate-800 p-4 rounded-xl text-xs font-mono text-slate-300 overflow-x-auto">
+{`def make_vertical_twitter_thumbnail(img_path, out_path, target_w=720, target_h=1280):
+    """Converts thumbnail to vertical 9:16 (720x1280) for Twitter/X cards with play icon"""
+    from PIL import Image, ImageFilter, ImageDraw
+    img = Image.open(img_path).convert('RGB')
+    w, h = img.size
+    canvas = Image.new('RGB', (target_w, target_h), (10, 10, 15))
+    if w / h > target_w / target_h: # Source is landscape
+        scale_bg = max(target_w / w, target_h / h)
+        bg = img.resize((int(w * scale_bg), int(h * scale_bg))).filter(ImageFilter.GaussianBlur(30))
+        canvas.paste(bg, ((target_w - bg.width) // 2, (target_h - bg.height) // 2))
+        scale_fg = target_w / w
+        fg = img.resize((target_w, int(h * scale_fg)))
+        canvas.paste(fg, (0, (target_h - fg.height) // 2))
+    else: # Source is portrait or square
+        scale = max(target_w / w, target_h / h)
+        fg = img.resize((int(w * scale), int(h * scale)))
+        canvas.paste(fg, ((target_w - fg.width) // 2, (target_h - fg.height) // 2))
+    # Burn centered play icon
+    draw = ImageDraw.Draw(canvas, 'RGBA')
+    cx, cy, r = target_w // 2, target_h // 2, 48
+    draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=(0, 0, 0, 160), outline=(255, 255, 255, 70), width=2)
+    draw.polygon([(cx - 14, cy - 22), (cx - 14, cy + 22), (cx + 22, cy)], fill=(255, 255, 255, 240))
+    canvas.save(out_path, 'JPEG', quality=92)`}
+              </pre>
+            </div>
           </div>
         </div>
       )}
@@ -1760,13 +1824,22 @@ API_HEADERS = {
               </div>
 
               <div>
-                <label className="block font-bold text-slate-400 uppercase tracking-wider mb-1">Twitter Thumbnail URL (with play icon)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-bold text-slate-400 uppercase tracking-wider text-xs">
+                    Twitter Thumbnail URL (Formato Vertical 9:16)
+                  </label>
+                  <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                    720×1280
+                  </span>
+                </div>
                 <input
                   type="url"
                   value={editingVideo.twitter_thumbnail || ''}
                   onChange={(e) => setEditingVideo({ ...editingVideo, twitter_thumbnail: e.target.value })}
+                  placeholder="https://cdn.example.com/vault/twitter-cover-vertical-9x16.jpg"
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white focus:outline-none focus:border-rose-500 font-mono"
                 />
+                <p className="text-[11px] text-slate-500 mt-1">Formato vertical (9:16) com ícone de play para exibição perfeita nos feeds do Twitter/X.</p>
               </div>
 
               <div className="flex items-center gap-2 pt-2">
@@ -2120,14 +2193,24 @@ API_HEADERS = {
                 </div>
 
                 <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <ImageIcon size={12} /> Twitter Card Thumbnail
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span className="flex items-center gap-1"><ImageIcon size={12} /> Twitter Card (Vertical)</span>
+                    <span className="text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/20 px-1.5 py-0.5 rounded font-mono">9:16 Vertical</span>
                   </div>
                   {previewingVideo.twitter_thumbnail ? (
-                    <img src={previewingVideo.twitter_thumbnail} alt="" className="w-full h-24 object-cover rounded-lg border border-slate-800" />
+                    <div className="w-full h-36 bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+                      <img src={previewingVideo.twitter_thumbnail} alt="" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/25 flex items-center justify-center pointer-events-none">
+                        <div className="w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm flex items-center justify-center text-white border border-white/20 shadow-md">
+                          <Play size={12} className="fill-white translate-x-0.5" />
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <div className="w-full h-24 bg-slate-900 rounded-lg flex items-center justify-center text-slate-600 text-[10px]">
-                      Missing Twitter Cover
+                    <div className="w-full h-36 bg-slate-900 rounded-lg flex flex-col items-center justify-center text-slate-600 text-[10px] gap-1 border border-slate-800/60">
+                      <ImageIcon size={16} className="text-slate-600" />
+                      <span>Missing Vertical Cover</span>
+                      <span className="text-[9px] text-slate-700">Fallback p/ standard</span>
                     </div>
                   )}
                 </div>

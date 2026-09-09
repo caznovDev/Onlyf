@@ -242,15 +242,18 @@ export default function UploadPage() {
                   <p className="text-[11px] text-slate-500 px-1">Displayed across the website grid and video player.</p>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Twitter Meta Tag Thumbnail (Optional)</label>
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Twitter Thumbnail - Formato Vertical (Opcional)</label>
+                    <span className="text-[9px] font-mono text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">9:16 (720x1280)</span>
+                  </div>
                   <input 
                     type="url"
                     value={formData.twitter_thumbnail_url}
                     onChange={(e) => setFormData({...formData, twitter_thumbnail_url: e.target.value})}
-                    placeholder="https://cdn.example.com/vault/twitter-cover-16x9.jpg"
+                    placeholder="https://cdn.example.com/vault/twitter-cover-vertical-9x16.jpg"
                     className="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl px-6 py-4 focus:border-rose-500 outline-none transition-all font-mono text-xs"
                   />
-                  <p className="text-[11px] text-slate-500 px-1">Dedicated 16:9 thumbnail for Twitter cards. Defaults to site thumbnail if omitted.</p>
+                  <p className="text-[11px] text-slate-500 px-1">Thumbnail em formato vertical (proporção 9:16) para exibição sem cortes horizontais no feed do Twitter/X. Se omitido, usa a thumbnail do site.</p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Discovery Tags (Comma separated)</label>

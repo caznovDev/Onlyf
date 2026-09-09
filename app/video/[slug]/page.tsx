@@ -139,9 +139,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const absoluteTwitterThumbnail = toAbsoluteUrl(twitterThumbnail);
   const absoluteVideoUrl = video.hover_preview_url ? toAbsoluteUrl(video.hover_preview_url) : '';
 
-  // Standard 16:9 high-res dimensions (1280x720) required for full-width large cards on Twitter/X and social previews
-  const cardWidth = 1280;
-  const cardHeight = 720;
+  // Vertical 9:16 high-res format (720x1280) for Twitter/X cards and vertical timeline display
+  const cardWidth = 720;
+  const cardHeight = 1280;
 
   // Zero-width space character (\u200B) prevents Twitter from falling back to OpenGraph or HTML title while leaving the card completely blank of text
   const emptyCardText = '\u200B';
